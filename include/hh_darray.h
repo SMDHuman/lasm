@@ -48,7 +48,6 @@ size_t hh_darray_get_fill(hh_darray_t* array);
 size_t hh_darray_get_size(hh_darray_t* array); 
 // Get how much of it is filled in item count
 size_t hh_darray_get_item_fill(hh_darray_t* array);
-#endif
 
 //-----------------------------------------------------------------------------
 // hh_darray function implementations
@@ -98,7 +97,7 @@ void hh_darray_popend(hh_darray_t* array, void* item){
 		}
 	}else{
 		array->fill -= array->word;
-		memcpy(item, array->data+array->fill, array->word);
+		if(item) memcpy(item, array->data+array->fill, array->word);
 		memset(array->data+array->fill, 0, array->word);
 	}
 }
@@ -125,6 +124,16 @@ void hh_darray_set(hh_darray_t* array, size_t index, void* item){
 	}
 }
 //-----------------------------------------------------------------------------
+void hh_darray_pop(hh_darray_t* array, size_t index, void* item){
+	if(item) hh_darray_get(array, index, item);
+	void *buffer = malloc(array->word);
+	for(size_t i = index; i < hh_darray_get_item_fill(array)-1; i++){
+		hh_darray_get(array, i+1, buffer);
+		hh_darray_set(array, i, buffer);
+	}
+	hh_darray_popend(array, 0);
+}
+//-----------------------------------------------------------------------------
 size_t hh_darray_get_fill(hh_darray_t* array){
 	if(array->next){
 		return(hh_darray_get_fill(array->next) + array->fill);
@@ -144,4 +153,5 @@ size_t hh_darray_get_size(hh_darray_t* array){
 size_t hh_darray_get_item_fill(hh_darray_t* array){
 	return(hh_darray_get_fill(array) / array->word);
 }
+#endif
 #endif

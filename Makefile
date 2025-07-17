@@ -1,5 +1,5 @@
-build/lasm: build/ src/lasm.c
-	gcc -o build/lasm src/lasm.c -I include
+build/lasm: build/ src/lasm.c include/* src/cpu/*
+	gcc -o build/lasm src/lasm.c -I include -I src/cpu
 
 build/:
 	mkdir build
