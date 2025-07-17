@@ -24,7 +24,7 @@ inc_one 2
 // Curley brackets creates a scope limited for macros
 // Outer macroes can be accessed inside but reverse can't happen
 {  
-	<hi "hi">
+	<hi 'hi'>
 	<start 123>
 	print hi, 2
 	print_val start // prints value of 123
