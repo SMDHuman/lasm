@@ -29,6 +29,8 @@ typedef enum{
 	SBRAC_C,
 	MACRO_O,
 	MACRO_C,
+	MACRO_ARG,
+	MACRO_INCLUDE,
 	NEWLINE,
 	HASH,
 	COLON,
@@ -37,6 +39,9 @@ typedef enum{
 	SLASH,
 	BSLASH,
 	ASTERISK,
+	QUEST,
+	EXCLA,
+	DOT,
 }TOKEN_ID;
 
 typedef struct{
@@ -79,7 +84,18 @@ uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		token.id = NONE;
 		memset(token.text, 0 ,MAX_TOKEN_SIZE);
 		if(cr == '<') token.id=MACRO_O;
-		if(cr == '>') token.id=MACRO_C;
+		if(cr == '>'){
+			token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
+			token_t t2; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-2, &t2);
+			if(t1.id == WORD && t2.id == MACRO_O){
+				hh_darray_popend(tokens, 0);
+				hh_darray_popend(tokens, 0);
+				t1.id = MACRO_ARG;
+				hh_darray_append(tokens, &t1);
+			}else {
+				token.id=MACRO_C;
+			}
+		}
 		if(cr == '(') token.id=RBRAC_O;
 		if(cr == ')') token.id=RBRAC_C;
 		if(cr == '[') token.id=SBRAC_O;
@@ -93,6 +109,8 @@ uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		if(cr == '/') token.id=SLASH;
 		if(cr == '\\') token.id=BSLASH;
 		if(cr == '*') token.id=ASTERISK;
+		if(cr == '?') token.id=QUEST;
+		if(cr == '!') token.id=EXCLA;
 		if(cr == '\n' || cr == ';'){
 			token_t t; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t);
 			if(t.id != NEWLINE){
@@ -124,7 +142,7 @@ uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		// Parse words
 		if(is_alpha(cr) || cr == '_'){
 			memset(word, 0, MAX_TOKEN_SIZE);
-			while(is_alpha(cr) || cr == '_'){
+			while(is_alpha(cr) || cr == '_' || cr == '.'){
 				strcat(word, &cr);
 				cr = fgetc(file);
 				col++;

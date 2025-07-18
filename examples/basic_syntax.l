@@ -1,4 +1,4 @@
-// This example use instructions of 6502 cpu 
+k // This example use instructions of 6502 cpu 
 // use this example in lasm with as "lasm basic_syntax.l -cpu 6502"
 
 // Zero page
@@ -9,9 +9,15 @@ zp {
 	c[4]:
 }
 
+asd
+
+<asd dsa>
+<dsa 123>
+
+
 start[0x8000]:  // declare bracnh label and set assembler counter
 
-<"hello_word.l"> // insert other file's content here
+<"examples/hello_world.l"> // insert other file's content here
 
 // Values
 1234 // Decimal
@@ -57,3 +63,16 @@ word_b; start; word_b
 	sta c+1         // Constant values can be processed in assembler with some math operations
 	jmp c
 >
+
+// 'a' used as a macro label to replace every 'a' with '32'
+<ax 32>
+
+// If 'a' is not used as a macro label, insert the code to current position
+<!ax 
+ 	<ax 23>
+ >
+
+// If 'a' is used as a macro label, insert the code to current position
+ <?ax
+	lda #ax
+ >

@@ -4,7 +4,7 @@
 // implement the functions of the library
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 17.07.2025
+// Last Update	: 18.07.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_DARRAY_INIT_SIZE
 #define HH_DARRAY_INIT_SIZE 16
@@ -38,9 +38,9 @@ void hh_darray_popend(hh_darray_t* array, void* item);
 void hh_darray_get(hh_darray_t* array, size_t index, void* item); 
 // Set item to the array on given index
 void hh_darray_set(hh_darray_t* array, size_t index, void* item); 
-//
+// Inset the item into the index by expanding the array
 void hh_darray_push(hh_darray_t* array, size_t index, void* item); 
-//
+// Set the item with index from the array and remove it by shrink the array
 void hh_darray_pop(hh_darray_t* array, size_t index, void* item); 
 // Get how much of it is filled in bytes
 size_t hh_darray_get_fill(hh_darray_t* array); 
@@ -48,6 +48,8 @@ size_t hh_darray_get_fill(hh_darray_t* array);
 size_t hh_darray_get_size(hh_darray_t* array); 
 // Get how much of it is filled in item count
 size_t hh_darray_get_item_fill(hh_darray_t* array);
+// Check if an item inside the array
+size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 
 //-----------------------------------------------------------------------------
 // hh_darray function implementations
@@ -82,7 +84,8 @@ void hh_darray_append(hh_darray_t* array, void* item){
 		}
 		hh_darray_append(array->next, item);
 	}else{
-		memcpy(array->data+array->fill, item, array->word);
+		if(item) memcpy(array->data+array->fill, item, array->word);
+		else memset(array->data+array->fill, 0, array->word);
 		array->fill += array->word;
 	}
 }
@@ -120,8 +123,19 @@ void hh_darray_set(hh_darray_t* array, size_t index, void* item){
 			hh_darray_set(array->next, index, item);	
 		}
 	}else if(index < array->fill / array->word){
-		memcpy(array->data+(index*array->word), item, array->word);
+		if(item) memcpy(array->data+(index*array->word), item, array->word);
+		else memset(array->data+(index*array->word), 0, array->word);
 	}
+}
+//-----------------------------------------------------------------------------
+void hh_darray_push(hh_darray_t* array, size_t index, void* item){
+	hh_darray_append(array, 0);
+	void *buffer = malloc(array->word);
+	for(size_t i = hh_darray_get_item_fill(array)-1; i > index ; i--){
+		hh_darray_get(array, i-1, buffer);
+		hh_darray_set(array, i, buffer);
+	}
+	hh_darray_set(array, index, item);	
 }
 //-----------------------------------------------------------------------------
 void hh_darray_pop(hh_darray_t* array, size_t index, void* item){
@@ -153,5 +167,16 @@ size_t hh_darray_get_size(hh_darray_t* array){
 size_t hh_darray_get_item_fill(hh_darray_t* array){
 	return(hh_darray_get_fill(array) / array->word);
 }
+
+//-----------------------------------------------------------------------------
+size_t hh_darray_is_inside(hh_darray_t* array, void* item){
+	void *array_item = malloc(array->word); 
+	for(size_t i = 0; i < hh_darray_get_item_fill(array); i++){
+		hh_darray_get(array, i, array_item);
+		if(memcmp(array_item, item, array->word) == 0) return i;
+	}
+	return -1;
+}
+
 #endif
 #endif
