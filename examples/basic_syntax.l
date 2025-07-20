@@ -1,4 +1,4 @@
-k // This example use instructions of 6502 cpu 
+// This example use instructions of 6502 cpu 
 // use this example in lasm with as "lasm basic_syntax.l -cpu 6502"
 
 // Zero page
@@ -17,21 +17,24 @@ asd
 
 start[0x8000]:  // declare bracnh label and set assembler counter
 
-<"examples/hello_world.l"> // insert other file's content here
+<"hello_world.l"> // insert other file's content here
 
 // Values
-1234 // Decimal
-0xff // Hexadecimal
-0b11 // Binary
+1234 // Decimal number size of 2 byte
+0xff // Hexadecimal number size of 1 bytes
+0b11 .4 // Binary number size of 4 bytes
 
 // Macro usage
+{
+again:
 inc_one zp.a
-inc_one 2
-
+inc_one 2     // zp.b
+beq again     // Relative jump
+}
 // Curley brackets creates a scope limited for macros
 // Outer macroes can be accessed inside but reverse can't happen
 {  
-	print hi, 2
+	print_str hi, 2
 	print_val start // prints value of 123
 	jump out
 	hi: 'hi'
@@ -44,11 +47,7 @@ print_val start // prints value of 0x8000
 jump start
 
 reset_vectors[0xfffa]:
-word_b; start; word_b
-
-// Macroes
-<byte_b; 0> // ";" is equevelent of new line
-<word_b; byte_b; byte_b> // macros can be used in other macros
+0.2; start; 0.2
 
 // Macro with argument
 <inc_one <x>
@@ -62,6 +61,13 @@ word_b; start; word_b
 	lda# <there>[1] // '#' is a seperate token, the type of cpu may change the use of those characters  
 	sta c+1         // Constant values can be processed in assembler with some math operations
 	jmp c
+>
+<print_str <ptr> <size>
+// things
+>
+
+<print_val <num>
+// things
 >
 
 // 'a' used as a macro label to replace every 'a' with '32'

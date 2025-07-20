@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define HH_DARRAY_IMPLEMENTATION
 #include "hh_darray.h"
 
 //-----------------------------------------------------------------------------
@@ -19,6 +18,8 @@ typedef enum{
 	NONE,
 	WORD,
 	NUMBER,	
+	VECTOR,
+	SIZE,
 	STRING_DB,
 	STRING_SG,
 	RBRAC_O,
@@ -67,39 +68,52 @@ uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 	token_t token = {0};
 	strcat(token.filename, filename);
 	while(1){
-		char cr = fgetc(file);col++;
+		char cr = fgetc(file);
 		// Leave on end of file
 		if(cr == EOF) break;
 		//...
 		if(cr == '\n'){
 			line++;
-			col = 0;
+			col = 1;
 		}
 		// Ignore comments
 		if(cr == '\n' && comment == 2) comment = 0;
-		if(cr != '\n' && comment == 2) continue;
-		if(cr == '/' && comment == 0) {comment = 1; continue;}
-		if(cr == '/' && comment == 1) {comment = 2; continue;}
+		if(cr != '\n' && comment == 2) {col++; continue;}
+		if(cr == '/' && comment == 0) {comment = 1; col++; continue;}
+		if(cr == '/' && comment == 1) {comment = 2; col++;continue;}
 		// Check chars
 		token.id = NONE;
 		memset(token.text, 0 ,MAX_TOKEN_SIZE);
 		if(cr == '<') token.id=MACRO_O;
 		if(cr == '>'){
-			token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
-			token_t t2; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-2, &t2);
-			if(t1.id == WORD && t2.id == MACRO_O){
-				hh_darray_popend(tokens, 0);
-				hh_darray_popend(tokens, 0);
-				t1.id = MACRO_ARG;
-				hh_darray_append(tokens, &t1);
-			}else {
-				token.id=MACRO_C;
-			}
-		}
+						token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
+						token_t t2; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-2, &t2);
+						if(t1.id == WORD && t2.id == MACRO_O){
+							hh_darray_popend(tokens, 0);
+							hh_darray_popend(tokens, 0);
+							t1.id = MACRO_ARG;
+							hh_darray_append(tokens, &t1);
+							col++;
+						}else {
+							token.id=MACRO_C;
+						}
+					}
 		if(cr == '(') token.id=RBRAC_O;
 		if(cr == ')') token.id=RBRAC_C;
 		if(cr == '[') token.id=SBRAC_O;
-		if(cr == ']') token.id=SBRAC_C;
+		if(cr == ']') {
+						token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
+						token_t t2; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-2, &t2);
+						if(t1.id == NUMBER && t2.id == SBRAC_O){
+							hh_darray_popend(tokens, 0);
+							hh_darray_popend(tokens, 0);
+							t1.id = VECTOR;
+							hh_darray_append(tokens, &t1);
+							col++;
+						}else {
+							token.id=SBRAC_C;;
+						}
+					}
 		if(cr == '{') token.id=CBRAC_O;
 		if(cr == '}') token.id=CBRAC_C;
 		if(cr == '#') token.id=HASH;
@@ -111,6 +125,7 @@ uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		if(cr == '*') token.id=ASTERISK;
 		if(cr == '?') token.id=QUEST;
 		if(cr == '!') token.id=EXCLA;
+		if(cr == '.') token.id=DOT;
 		if(cr == '\n' || cr == ';'){
 			token_t t; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t);
 			if(t.id != NEWLINE){
@@ -119,6 +134,7 @@ uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 			}
 		}
 		if(token.id != NONE){
+			col++;
 			token.line=line;
 			token.col=col-1;
 			token.text[0] = cr;
@@ -136,6 +152,13 @@ uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 			token.line=line;
 			token.col=col-strlen(word);
 			memcpy(token.text, word, MAX_TOKEN_SIZE);
+			{
+				token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
+				if(t1.id == DOT){
+					hh_darray_popend(tokens, 0);
+					token.id = SIZE;
+				}
+			}
 			hh_darray_append(tokens, &token);
 			fseek(file, -1, SEEK_CUR);
 		}

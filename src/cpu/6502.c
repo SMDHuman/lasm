@@ -11,6 +11,8 @@ void assemble_6502(hh_darray_t *tokens, char out_name[]){
 		if(token.id == NEWLINE) fprintf(outf, "\n");
 		else if(token.id == STRING_DB) fprintf(outf, "\"%s\" ", token.text);
 		else if(token.id == STRING_SG) fprintf(outf,"\'%s\' ", token.text);
+		else if(token.id == VECTOR) fprintf(outf,"[%s] ", token.text);
+		else if(token.id == SIZE) fprintf(outf,".%s ", token.text);
 		else fprintf(outf, "%s ", token.text);
 		//printf("id: %d, line: %d, col: %d, text: '%s'\n", 
 		//		token.id, token.line, token.col, token.text);
