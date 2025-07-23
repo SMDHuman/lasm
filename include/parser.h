@@ -7,9 +7,31 @@
 #include <stdint.h>
 #include "hh_darray.h"
 #include "tokenizer.h"
+//-----------------------------------------------------------------------------
+typedef struct{
+	uint32_t value;
+	uint32_t address;
+	uint32_t tokens_origin;
+	char *name;
+	token_t *token;
+}lasm_var_t;
+
+typedef struct{
+	uint32_t head;
+	uint32_t address;
+	hh_darray_t *tokens;
+}token_reader_t;
+
+extern hh_darray_t lasm_vars; // sizeof(lasm_var_t)
+extern token_reader_t lasm_tokens;
 
 //-----------------------------------------------------------------------------
-uint8_t eval_expression(hh_darray_t *tokens, uint32_t index );
+uint8_t parse(hh_darray_t *tokens, uint32_t *head, uint32_t *addres);
+uint8_t eval_expression(hh_darray_t *tokens, uint32_t index);
+uint8_t get_var(char *name, lasm_var_t *lasm_var);
+uint8_t expect_token_name(char *name);
+uint8_t expect_token_id(TOKEN_ID id);
+//...
 uint8_t preprocess_macros(hh_darray_t *tokens, hh_darray_t *macros);
 uint8_t find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths);
 uint8_t extract_macros(hh_darray_t *tokens, hh_darray_t *macros);
@@ -23,14 +45,37 @@ char* extract_folder_path(const char* path);
 //-----------------------------------------------------------------------------
 #ifdef PARSER_IMPLEMENTATION
 //-----------------------------------------------------------------------------
+uint8_t parse(hh_darray_t *tokens, uint32_t *head, uint32_t *addres){
+	token_t token; hh_darray_get(tokens, *head, &token);
+	if(token.id == WORD){
+		lasm_var_t var;
+		if(get_var(token.text, &var)){
+			
+		}else{
+			
+		}
+	}
+}
 
+//-----------------------------------------------------------------------------
+uint8_t get_var(char *name, lasm_var_t *lasm_var){
+	for(uint32_t i = 0; i < hh_darray_get_item_fill(&lasm_vars); i++){
+		lasm_var_t var; hh_darray_get(&lasm_vars, i, &var);
+		if(strcmp(name, var.name) == 0){
+			if(lasm_var) memcpy(lasm_var, &var, sizeof(lasm_var_t));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+//-----------------------------------------------------------------------------
 uint8_t preprocess_macros(hh_darray_t *tokens, hh_darray_t *macros){
 	// Extract macros
 	if(extract_macros(tokens, macros) == ERR) return ERR;
 	//print_macros(macros);
 	// Apply macros main tokens
 	if(apply_macros(tokens, macros) == ERR) return ERR;
-	 
 	return 0;
 }
 

@@ -11,8 +11,8 @@
 
 //-----------------------------------------------------------------------------
 uint8_t get_arg_index(int argc, char *argv[], const char word[]);
-
 hh_darray_t tokens;
+hh_darray_t lasm_vars;
 
 //-----------------------------------------------------------------------------
 int main(int argc, char *argv[]){
@@ -42,8 +42,6 @@ int main(int argc, char *argv[]){
 	if(preprocess_macros(&tokens, &macros) == ERR) return 0;
 	newline_after_branches(&tokens);
 	clean_newlines(&tokens);
-	//...
-	printf("number of tokens: %ld\n", hh_darray_get_item_fill(&tokens));
 	// Parse output file name if there is any
 	uint8_t out_i = get_arg_index(argc, argv, "-o"); // Output file name
 	char output_name[MAX_TOKEN_SIZE] = {0};
@@ -51,10 +49,12 @@ int main(int argc, char *argv[]){
 	else strcat(output_name, "a.out");
 	// Parse selected cpu and assemble tokens
 	uint8_t cpu_i = get_arg_index(argc, argv, "-m"); // Machine cpu name
+	FILE *outf = fopen(output_name, "w");
+	hh_darray_init(&lasm_vars, sizeof(lasm_var_t));
 	if(cpu_i){
 		if(strcmp(argv[cpu_i+1], "6502") == 0){
 			printf("Assembling for 6502...\n");
-			assemble_6502(&tokens, output_name);
+			assemble_6502(&tokens, outf);
 		}else{
 			printf("[ERROR] Machine named '%s' not found\n", argv[cpu_i+1]);
 			return 0;
@@ -66,6 +66,7 @@ int main(int argc, char *argv[]){
 	//...
 	printf("Done!\n");
 	hh_darray_deinit(&tokens);
+	fclose(outf);
 	return 0;
 }
 
