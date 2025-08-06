@@ -1,8 +1,8 @@
 //-----------------------------------------------------------------------------
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
-#ifndef TOKENIZER_H
-#define TOKENIZER_H
+#ifndef LASM_TOKENIZER_H
+#define LASM_TOKENIZER_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -53,15 +53,17 @@ typedef struct{
 	char text[MAX_TOKEN_SIZE];
 }token_t;
 
-uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens);
+uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens);
 uint8_t is_alpha(char c);
 uint8_t is_inside(char c, const char* chars);
+void print_error_loc(token_t *token);
+void print_tokens_as_code(hh_darray_t* tokens);
 
 //-----------------------------------------------------------------------------
-#ifdef TOKENIZER_IMPLEMENTATION
+#ifdef LASM_TOKENIZER_IMPLEMENTATION
 //-----------------------------------------------------------------------------
 
-uint8_t tokenize(FILE* file, char *filename, hh_darray_t* tokens){
+uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 	uint32_t line = 1, col = 1;
 	uint8_t comment = 0;
 	char word[MAX_TOKEN_SIZE];
@@ -223,6 +225,25 @@ uint8_t is_inside(char c, const char* chars){
 	}
 	return 0;
 }
+//-----------------------------------------------------------------------------
+void print_error_loc(token_t *token){
+	printf("[ERROR] '%s':%d:%d:", token->filename, token->line, token->col);
+}
+void print_tokens_as_code(hh_darray_t* tokens){
+	token_t token;
+	uint32_t head = 0;
+	const uint32_t tokens_end = hh_darray_get_item_fill(tokens);
+	while(head < tokens_end){
+		hh_darray_get(tokens, head++, &token);
+		if(token.id == NEWLINE) printf(";\n");
+		else if(token.id == STRING_DB) printf("\"%s\"", token.text);
+		else if(token.id == STRING_SG) printf("'%s'", token.text);
+		else if(token.id == VECTOR) printf("[%s]", token.text);
+		else if(token.id == SIZE) printf(".%s", token.text);
+		else printf("%s ", token.text);
+	}		
+}
+
 
 #endif
 #endif

@@ -1,86 +1,25 @@
 //-----------------------------------------------------------------------------
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef LASM_MACRO_H
+#define LASM_MACRO_H
 
 #include <stdint.h>
 #include "hh_darray.h"
-#include "tokenizer.h"
-//-----------------------------------------------------------------------------
-typedef struct{
-	uint32_t value;
-	uint32_t address;
-	uint32_t tokens_origin;
-	char *name;
-	token_t *token;
-}lasm_var_t;
-
-typedef struct{
-	uint32_t head;
-	uint32_t address;
-	hh_darray_t *tokens;
-}token_reader_t;
-
-extern hh_darray_t lasm_vars; // sizeof(lasm_var_t)
-extern token_reader_t lasm_tokens;
+#include "lasm_tokenizer.h"
 
 //-----------------------------------------------------------------------------
-uint8_t parse(hh_darray_t *tokens, uint32_t *head, uint32_t *addres);
-uint8_t eval_expression(hh_darray_t *tokens, uint32_t index);
-uint8_t get_var(char *name, lasm_var_t *lasm_var);
-uint8_t expect_token_name(char *name);
-uint8_t expect_token_id(TOKEN_ID id);
-//...
-uint8_t preprocess_macros(hh_darray_t *tokens, hh_darray_t *macros);
-uint8_t find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths);
-uint8_t extract_macros(hh_darray_t *tokens, hh_darray_t *macros);
-uint8_t apply_macros(hh_darray_t *tokens, hh_darray_t *macros);
-void clean_newlines(hh_darray_t *tokens);
-void newline_after_branches(hh_darray_t *tokens);
-void print_macros(hh_darray_t *macros);
-void print_error_loc(token_t *token);
-char* extract_folder_path(const char* path);
+uint8_t lasm_find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths);
+uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros);
+uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros);
+uint8_t lasm_clear_multi_newlines(hh_darray_t *tokens);
+uint8_t lasm_newline_after_branches(hh_darray_t *tokens);
 
 //-----------------------------------------------------------------------------
-#ifdef PARSER_IMPLEMENTATION
-//-----------------------------------------------------------------------------
-uint8_t parse(hh_darray_t *tokens, uint32_t *head, uint32_t *addres){
-	token_t token; hh_darray_get(tokens, *head, &token);
-	if(token.id == WORD){
-		lasm_var_t var;
-		if(get_var(token.text, &var)){
-			
-		}else{
-			
-		}
-	}
-}
+#ifdef LASM_MACRO_IMPLEMENTATION
 
 //-----------------------------------------------------------------------------
-uint8_t get_var(char *name, lasm_var_t *lasm_var){
-	for(uint32_t i = 0; i < hh_darray_get_item_fill(&lasm_vars); i++){
-		lasm_var_t var; hh_darray_get(&lasm_vars, i, &var);
-		if(strcmp(name, var.name) == 0){
-			if(lasm_var) memcpy(lasm_var, &var, sizeof(lasm_var_t));
-			return 1;
-		}
-	}
-	return 0;
-}
-
-//-----------------------------------------------------------------------------
-uint8_t preprocess_macros(hh_darray_t *tokens, hh_darray_t *macros){
-	// Extract macros
-	if(extract_macros(tokens, macros) == ERR) return ERR;
-	//print_macros(macros);
-	// Apply macros main tokens
-	if(apply_macros(tokens, macros) == ERR) return ERR;
-	return 0;
-}
-
-//-----------------------------------------------------------------------------
-uint8_t find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths){
+uint8_t lasm_find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths){
 	uint8_t macro_inside = 0;
 	uint32_t macro_size = 0;
 	token_t token;
@@ -114,9 +53,9 @@ uint8_t find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths){
 					// Tokenize input file
 					hh_darray_t include_tokens;
 					hh_darray_init(&include_tokens, sizeof(token_t));
-					if(tokenize(file, token.text, &include_tokens) == ERR) return ERR;
+					if(lasm_tokenize(file, token.text, &include_tokens) == ERR) return ERR;
 					// Find and apply includes in it
-					if(find_apply_includes(&include_tokens, include_paths) == ERR) return 0;
+					if(lasm_find_apply_includes(&include_tokens, include_paths) == ERR) return 0;
 					hh_darray_pop(tokens, i-2, 0);
 					hh_darray_pop(tokens, i-2, 0);
 					hh_darray_pop(tokens, i-2, 0);
@@ -137,7 +76,7 @@ uint8_t find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths){
 }
 
 //-----------------------------------------------------------------------------
-uint8_t extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
+uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 	int8_t macro_inside = 0;
 	hh_darray_t *macro_tokens;
 	token_t opener_token;
@@ -238,7 +177,7 @@ uint8_t extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 	return 0;
 }
 //-----------------------------------------------------------------------------
-uint8_t apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
+uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 	for(uint32_t i = 0; i < hh_darray_get_item_fill(tokens); i++){
 		token_t token; hh_darray_get(tokens, i, &token);
 		if(token.id == WORD){
@@ -289,7 +228,7 @@ uint8_t apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 }
 
 //-----------------------------------------------------------------------------
-void clean_newlines(hh_darray_t *tokens){
+uint8_t lasm_clear_multi_newlines(hh_darray_t *tokens){
 	// Clean up unnecessary newlines
 	uint8_t prev_nl = 1;
 	for(uint32_t i = 0; i < hh_darray_get_item_fill(tokens); i++){
@@ -301,9 +240,10 @@ void clean_newlines(hh_darray_t *tokens){
 			prev_nl = 0;
 		}
 	}
+	return 0;
 }
 //-----------------------------------------------------------------------------
-void newline_after_branches(hh_darray_t *tokens){
+uint8_t lasm_newline_after_branches(hh_darray_t *tokens){
 	for(uint32_t i = 0; i < hh_darray_get_item_fill(tokens); i++){
 		token_t token; hh_darray_get(tokens, i, &token);
 		if(token.id == COLON){
@@ -312,37 +252,8 @@ void newline_after_branches(hh_darray_t *tokens){
 			hh_darray_push(tokens, ++i, &token_nl);
 		}					
 	}	
+	return 0;
 }
-
-//-----------------------------------------------------------------------------
-void print_macros(hh_darray_t *macros){
-	for(uint32_t i = 0; i < hh_darray_get_item_fill(macros); i++){
-		hh_darray_t macro_tokens; hh_darray_get(macros, i, &macro_tokens);
-		for(uint32_t j = 0; j < hh_darray_get_item_fill(&macro_tokens); j++){			
-			token_t token; hh_darray_get(&macro_tokens, j, &token);
-			printf("%s ", token.text);
-		}
-		printf("\n");
-	}
-}
-
-//-----------------------------------------------------------------------------
-char* extract_folder_path(const char* path){
-	uint16_t size = 0;
-	for(uint16_t i = 0; path[i] != 0; i++){
-		if(path[i] == '/' || path[i] == '\\') size = i;
-	}
-	char* folder_path = malloc(size+1);
-	memcpy(folder_path, path, size);
-	folder_path[size] = 0;
-	return(folder_path);
-}
-
-//-----------------------------------------------------------------------------
-void print_error_loc(token_t *token){
-	printf("[ERROR] '%s':%d:%d:", token->filename, token->line, token->col);
-}
-
 
 #endif
 #endif

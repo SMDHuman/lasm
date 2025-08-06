@@ -7,6 +7,11 @@ zp {
 	a[0]:
 	b[2]:
 	c[4]:
+	io{
+	  text_size[24]:
+	  text_pointer[26]:
+	}
+	end[255]:
 }
 
 asd
@@ -14,6 +19,12 @@ asd
 <asd dsa>
 <dsa 123>
 
+0xffff
+
+//stack{
+//	[zp.end + 1]:
+//	0 .256 //blank space 
+//}
 
 start[0x8000]:  // declare bracnh label and set assembler counter
 
@@ -43,11 +54,11 @@ beq again     // Relative jump
 }
 print_val start // prints value of 0x8000
 // now 'hi' macro can't be accessable
-
+here:
 jump start
 
 reset_vectors[0xfffa]:
-0.2; start; 0.2
+0 .2; start; 0 .2
 
 // Macro with argument
 <inc_one <x>

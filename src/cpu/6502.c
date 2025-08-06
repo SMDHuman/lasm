@@ -1,8 +1,7 @@
 #include <stdint.h>
 #include <string.h>
-#include "../../include/tokenizer.h"
+#include "../../include/lasm_tokenizer.h"
 #include "../../include/hh_darray.h"
-#include "../../include/parser.h"
 
 char char_upper(char c);
 uint8_t is_instruction(token_t *token);
@@ -26,12 +25,10 @@ void assemble_6502(hh_darray_t *tokens, FILE *outf){
 			fprintf(outf, "%s\n", token.text);
 		}
 		else{
-			parse(tokens, &head, &address);
 		}
 		//printf("id: %d, line: %d, col: %d, text: '%s'\n", 
 		//		token.id, token.line, token.col, token.text);
 	}
-	
 }
 
 // return 255 if false, index of it if true
