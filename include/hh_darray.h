@@ -4,7 +4,7 @@
 // implement the functions of the library
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 18.07.2025
+// Last Update	: 08.08.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_DARRAY_INIT_SIZE
 #define HH_DARRAY_INIT_SIZE 16
@@ -30,21 +30,22 @@ typedef struct hh_darray_t{
 }hh_darray_t;
 
 #ifdef HH_DARRAY_SORT_PREFIX
-void hda_init(hh_darray_t* array, size_t word); 
-void hda_deinit(hh_darray_t* array); 
-void hda_append(hh_darray_t* array, void* item); 
-void hda_popend(hh_darray_t* array, void* item); 
-void hda_get(hh_darray_t* array, size_t index, void* item); 
-void hda_set(hh_darray_t* array, size_t index, void* item); 
-void hda_push(hh_darray_t* array, size_t index, void* item); 
-void hda_pop(hh_darray_t* array, size_t index, void* item); 
-size_t hda_get_fill(hh_darray_t* array); 
-size_t hda_get_size(hh_darray_t* array); 
-size_t hda_get_item_fill(hh_darray_t* array);
-size_t hda_is_inside(hh_darray_t* array, void* item);
+#define hda_init hh_darray_init
+#define hda_deinit hh_darray_deinit
+#define hda_append hh_darray_append
+#define hda_popend hh_darray_popend
+#define hda_get hh_darray_get
+#define hda_set hh_darray_set
+#define hda_push hh_darray_push
+#define hda_pop hh_darray_pop
+#define hda_get_fill hh_darray_get_fill
+#define hda_get_size hh_darray_get_size
+#define hda_get_item_fill hh_darray_get_item_fill
+#define hda_is_inside hh_darray_is_inside
+#define hda_get_reference hh_darray_get_reference
+#define hda_get_end_reference hh_darray_get_end_reference
 #endif
 
-#ifndef HH_DARRAY_SORT_PREFIX
 // Initialize the array
 void hh_darray_init(hh_darray_t* array, size_t word); 
 // Deinitialize the array
@@ -69,18 +70,17 @@ size_t hh_darray_get_size(hh_darray_t* array);
 size_t hh_darray_get_item_fill(hh_darray_t* array);
 // Check if an item inside the array
 size_t hh_darray_is_inside(hh_darray_t* array, void* item);
-#endif
+// Returns the pointer to the item in the array
+void* hh_darray_get_reference(hh_darray_t* array, size_t index); 
+// Returns the pointer to the last item in the array
+void* hh_darray_get_end_reference(hh_darray_t* array);
+
 
 //-----------------------------------------------------------------------------
 // hh_darray function implementations
 	#ifdef HH_DARRAY_IMPLEMENTATION
 	
-	#ifdef HH_DARRAY_SORT_PREFIX
-	void hda_init(hh_darray_t* array, size_t word){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	void hh_darray_init(hh_darray_t* array, size_t word){
-	#endif 
 		array->size = word*HH_DARRAY_INIT_SIZE;
 		array->fill = 0;
 		array->word = word;
@@ -88,12 +88,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		array->data = malloc(array->size);
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	void hda_deinit(hh_darray_t* array){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	void hh_darray_deinit(hh_darray_t* array){
-	#endif 
 		if(array->next){
 			hh_darray_deinit(array->next);
 			free(array->next);
@@ -102,12 +97,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		memset(array, 0, sizeof(hh_darray_t));
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	void hda_append(hh_darray_t* array, void* item){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	void hh_darray_append(hh_darray_t* array, void* item){
-	#endif 
 		if(array->fill + array->word > array->size){
 			if(!array->next){
 				array->next = malloc(sizeof(hh_darray_t));
@@ -125,12 +115,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		}
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	void hda_popend(hh_darray_t* array, void* item){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	void hh_darray_popend(hh_darray_t* array, void* item){
-	#endif 
 		if(array->next){
 			hh_darray_popend(array->next, item);
 			if(array->next->fill == 0){
@@ -145,12 +130,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		}
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	void hda_get(hh_darray_t* array, size_t index, void* item){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	void hh_darray_get(hh_darray_t* array, size_t index, void* item){
-	#endif 
 		if(index >= array->size / array->word){
 			if(array->next){
 				index -= array->fill / array->word;
@@ -161,12 +141,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		}
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	void hda_set(hh_darray_t* array, size_t index, void* item){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	void hh_darray_set(hh_darray_t* array, size_t index, void* item){
-	#endif 
 		if(index >= array->size / array->word){
 			if(array->next){
 				index -= array->fill / array->word;
@@ -178,12 +153,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		}
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	void hda_push(hh_darray_t* array, size_t index, void* item){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	void hh_darray_push(hh_darray_t* array, size_t index, void* item){
-	#endif 
 		hh_darray_append(array, 0);
 		void *buffer = malloc(array->word);
 		for(size_t i = hh_darray_get_item_fill(array)-1; i > index ; i--){
@@ -193,12 +163,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		hh_darray_set(array, index, item);	
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	void hda_pop(hh_darray_t* array, size_t index, void* item){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	void hh_darray_pop(hh_darray_t* array, size_t index, void* item){
-	#endif 
 		if(item) hh_darray_get(array, index, item);
 		void *buffer = malloc(array->word);
 		for(size_t i = index; i < hh_darray_get_item_fill(array)-1; i++){
@@ -208,12 +173,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		hh_darray_popend(array, 0);
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	size_t hda_get_fill(hh_darray_t* array){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	size_t hh_darray_get_fill(hh_darray_t* array){
-	#endif 
 		if(array->next){
 			return(hh_darray_get_fill(array->next) + array->fill);
 		}else{
@@ -221,12 +181,7 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		}
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	size_t hda_get_size(hh_darray_t* array){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	size_t hh_darray_get_size(hh_darray_t* array){
-	#endif 
 		if(array->next){
 			return(hh_darray_get_size(array->next) + array->size);
 		}else{
@@ -234,22 +189,12 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		}
 	}
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	size_t hda_get_item_fill(hh_darray_t* array){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	size_t hh_darray_get_item_fill(hh_darray_t* array){
-	#endif 
 		return(hh_darray_get_fill(array) / array->word);
 	}
 
 	//-----------------------------------------------------------------------------
-	#ifdef HH_DARRAY_SORT_PREFIX
-	size_t hda_is_inside(hh_darray_t* array, void* item){
-	#endif 
-	#ifndef HH_DARRAY_SORT_PREFIX
 	size_t hh_darray_is_inside(hh_darray_t* array, void* item){
-	#endif 
 		void *array_item = malloc(array->word); 
 		for(size_t i = 0; i < hh_darray_get_item_fill(array); i++){
 			hh_darray_get(array, i, array_item);
@@ -257,6 +202,21 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 		}
 		return -1;
 	}
-
+	//-----------------------------------------------------------------------------
+	void* hh_darray_get_reference(hh_darray_t* array, size_t index){
+		if(index*array->word >= array->size){
+			if(array->next){
+				index -= array->size/array->word;
+				return hh_darray_get_reference(array->next, index);
+			}
+			return 0; // Index out of bounds
+		}else{
+			return (void*)(array->data + (index * array->word));
+		}
+	}
+	//-----------------------------------------------------------------------------
+	void* hh_darray_get_end_reference(hh_darray_t* array){
+		return hh_darray_get_reference(array, hh_darray_get_item_fill(array) - 1);
+	}
 	#endif
 #endif

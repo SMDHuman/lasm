@@ -1,0 +1,71 @@
+{
+  "name": "",
+  "level": 0,
+  "constant": 1,
+  "labels": {
+  },
+  "namespaces": [
+    {
+      "name": "first",
+      "level": 1,
+      "constant": 1,
+      "labels": {
+        "a": ["0"],
+        "b": ["4"],
+        "c": ["8"],
+        "d": ["12"]
+      },
+      "namespaces": [
+        {
+          "name": "stack",
+          "level": 2,
+          "constant": 1,
+          "labels": {
+            "start": ["256"],
+            "end": ["start", "+", "256"]
+          },
+          "namespaces": [
+
+          ]
+        }
+      ]
+    }    ,
+    {
+      "name": "",
+      "level": 1,
+      "constant": 0,
+      "labels": {
+        "locater": ["0x1000"],
+        "this": [],
+        "that": []
+      },
+      "namespaces": [
+        {
+          "name": "here",
+          "level": 2,
+          "constant": 1,
+          "labels": {
+            "maybe": [],
+            "later": []
+          },
+          "namespaces": [
+
+          ]
+        }        ,
+        {
+          "name": "",
+          "level": 2,
+          "constant": 0,
+          "labels": {
+            "x": [],
+            "y": [],
+            "z": []
+          },
+          "namespaces": [
+
+          ]
+        }
+      ]
+    }
+  ]
+}

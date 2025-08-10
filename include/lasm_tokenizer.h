@@ -103,7 +103,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		if(cr == '(') token.id=RBRAC_O;
 		if(cr == ')') token.id=RBRAC_C;
 		if(cr == '[') token.id=SBRAC_O;
-		if(cr == ']') {
+		if(cr == ']') token.id=SBRAC_C;/*{
 						token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
 						token_t t2; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-2, &t2);
 						if(t1.id == NUMBER && t2.id == SBRAC_O){
@@ -113,9 +113,9 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 							hh_darray_append(tokens, &t1);
 							col++;
 						}else {
-							token.id=SBRAC_C;;
+							token.id=SBRAC_C;
 						}
-					}
+					}*/
 		if(cr == '{') token.id=CBRAC_O;
 		if(cr == '}') token.id=CBRAC_C;
 		if(cr == '#') token.id=HASH;

@@ -1,0 +1,72 @@
+WORD:
+  Alphanumerics + '_.'. Starts with Alphas or '_'
+NUMBERS:
+  numberics that can also starts with '0x' or '0b' include 'abcdef' upper or lower
+EXPRESSION:
+  ?( WORD|NUMBERS ?[EXPRESSION] ?) ?(OPERATION EXPRESSION) 
+DATA_SECTION:
+  EXPRESSION ?.[EXPRESSION] 
+OPERATION:
+  '+-*\'
+VECTOR_BRANCH:
+  WORD [ EXPRESSION ] : 
+BRANCH:
+  WORD : 
+INSTRUCTION:
+  WORD ... machine spesific rules here
+PROGRAM:
+  DATA_SECTIO|BRANCH|VECTOR_BRANCH|INSTRUCTION|NONE; PROGRAM
+
+main_loop{
+  if(token == '(') {
+    parse_data_section(token)
+  }
+  else if(token == NUMBER){
+    parse_data_section(token)
+  }
+  else if(token == WORD){
+    next()
+    if(token == ':') -> BRANCH
+    else if(token == '['){
+      next()
+      parse_expression(token)
+      if(token == ']') {
+        next()
+        if(token == ':')-> VECTOR_BRANCH
+        else -> SYNTAX_ERROR
+      }
+      else -> SYNTAX_ERROR
+    }
+    else if(token == OPERATION){
+      previus()
+      parse_data_section(token)
+    }
+    else{
+      previus()
+      parse_machine_instrucion(token)
+    }
+  }
+  else -> SYNTAX_ERROR
+  if(token != ';') -> SYNTAX_ERROR
+  else next()
+}
+
+parse_data_section(token){
+    parse_expression(token)
+    if(token == '.'){
+      next()
+      if(token == '['){
+        next()
+        parse_expression(token)
+        if(token == ']') -> DATA_SECTION
+        else -> SYNTAX_ERROR
+        next()
+      }
+      else -> SYNTAX_ERROR
+    }
+    else -> DATA_SECTION
+}
+
+parse_expression(token){
+  
+}

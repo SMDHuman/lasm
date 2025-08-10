@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.mm4": "plaintext",
+    "lasm_parser.h": "c"
+  }
+}

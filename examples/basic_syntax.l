@@ -23,7 +23,7 @@ asd
 
 //stack{
 //	[zp.end + 1]:
-//	0 .256 //blank space 
+//	0 .[256] //blank space 
 //}
 
 start[0x8000]:  // declare bracnh label and set assembler counter
@@ -33,7 +33,7 @@ start[0x8000]:  // declare bracnh label and set assembler counter
 // Values
 1234 // Decimal number size of 2 byte
 0xff // Hexadecimal number size of 1 bytes
-0b11 .4 // Binary number size of 4 bytes
+0b11 .[4] // Binary number size of 4 bytes -> 0x03, 0x00, 0x00, 0x00
 
 // Macro usage
 {
@@ -58,7 +58,7 @@ here:
 jump start
 
 reset_vectors[0xfffa]:
-0 .2; start; 0 .2
+0 .[2]; start; 0 .[2]
 
 // Macro with argument
 <inc_one <x>
