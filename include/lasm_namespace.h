@@ -18,9 +18,11 @@ typedef struct{
 }namespace_t;
 
 typedef struct{
-  token_t name; 
-  uint8_t vector; // Whether the label changes the address pointer
-  hh_darray_t address_expression; // list of tokens
+  uint8_t is_vector; // Whether the label changes the address pointer
+  uint8_t is_valid; // Whether the label is evaluated
+  uint32_t value; 
+  token_t name;
+  hh_darray_t vector_expression; // list of tokens
 }label_t;
 
 extern namespace_t global_space; // Global namespace for labels
@@ -28,5 +30,7 @@ extern hh_darray_t all_namespaces;
 
 uint8_t lasm_namespace_init(hh_darray_t *tokens);
 void lasm_namespace_to_json(namespace_t *namespace, FILE *file, int indent_level);
+label_t* lasm_find_label_in_namespace(namespace_t *namespace, const char *name);
+namespace_t* lasm_find_namespace_from_all(const char *name);
 
 #endif // LASM_NAMESPACE_H

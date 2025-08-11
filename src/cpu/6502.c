@@ -1,7 +1,8 @@
 #include <stdint.h>
 #include <string.h>
-#include "../../include/lasm_tokenizer.h"
-#include "../../include/hh_darray.h"
+#include "lasm_tokenizer.h"
+#include "hh_darray.h"
+#include "lasm_assembler.h"
 
 char char_upper(char c);
 uint8_t is_instruction(token_t *token);
@@ -14,21 +15,8 @@ char inst_words[56][3]={"ADC","AND","ASL","BCC","BCS","BEQ","BIT","BMI",
 						"ROR","RTI","RTS","SBC","SEC","SED","SEI","STA",
 						"STX","STY","TAX","TAY","TSX","TXA","TXS","TYA"};
 
-void assemble_6502(hh_darray_t *tokens, FILE *outf){
-	token_t token;
-	uint32_t head = 0;
-	uint32_t address = 0;
-	const uint32_t tokens_end = hh_darray_get_item_fill(tokens);
-	while(head < tokens_end){
-		hh_darray_get(tokens, head++, &token);
-		if(is_instruction(&token) != 255){
-			fprintf(outf, "%s\n", token.text);
-		}
-		else{
-		}
-		//printf("id: %d, line: %d, col: %d, text: '%s'\n", 
-		//		token.id, token.line, token.col, token.text);
-	}
+void lasm_6502_init(){
+	lasm_config.addressing_size = 2; // 16-bit addressing
 }
 
 // return 255 if false, index of it if true

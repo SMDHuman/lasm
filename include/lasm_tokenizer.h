@@ -43,6 +43,7 @@ typedef enum{
 	QUEST,
 	EXCLA,
 	DOT,
+	COMMA,
 }TOKEN_ID;
 
 typedef struct{
@@ -128,6 +129,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		if(cr == '?') token.id=QUEST;
 		if(cr == '!') token.id=EXCLA;
 		if(cr == '.') token.id=DOT;
+		if(cr == ',') token.id=COMMA;
 		if(cr == '\n' || cr == ';'){
 			token_t t; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t);
 			if(t.id != NEWLINE){
@@ -227,7 +229,7 @@ uint8_t is_inside(char c, const char* chars){
 }
 //-----------------------------------------------------------------------------
 void print_error_loc(token_t *token){
-	printf("[ERROR] '%s':%d:%d:", token->filename, token->line, token->col);
+	printf("[ERROR] '%s':%d:%d: ", token->filename, token->line, token->col);
 }
 void print_tokens_as_code(hh_darray_t* tokens){
 	token_t token;

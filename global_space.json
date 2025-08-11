@@ -7,25 +7,24 @@
   },
   "childs": [
     {
-      "name": "first",
+      "name": "zp",
       "level": 1,
       "constant": 1,
       "parent": "__global__",
       "labels": {
         "a": ["0"],
-        "b": ["4"],
-        "c": ["8"],
-        "d": ["12"]
+        "b": ["2"],
+        "c": ["4"]
       },
       "childs": [
         {
           "name": "stack",
           "level": 2,
           "constant": 1,
-          "parent": "first",
+          "parent": "zp",
           "labels": {
             "start": ["256"],
-            "end": ["start", "+", "256"]
+            "end": ["511"]
           },
           "childs": [
 
@@ -39,38 +38,11 @@
       "constant": 0,
       "parent": "__global__",
       "labels": {
-        "locater": ["0x1000"],
-        "this": [],
-        "that": []
+        "start": ["16"],
+        "LABEL": 17
       },
       "childs": [
-        {
-          "name": "here",
-          "level": 2,
-          "constant": 1,
-          "parent": "__unnamed0__",
-          "labels": {
-            "maybe": [],
-            "later": []
-          },
-          "childs": [
 
-          ]
-        }        ,
-        {
-          "name": "__unnamed1__",
-          "level": 2,
-          "constant": 0,
-          "parent": "__unnamed0__",
-          "labels": {
-            "x": [],
-            "y": [],
-            "z": []
-          },
-          "childs": [
-
-          ]
-        }
       ]
     }
   ]
