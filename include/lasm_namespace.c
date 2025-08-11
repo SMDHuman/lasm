@@ -156,7 +156,10 @@ void lasm_namespace_to_json(namespace_t *namespace, FILE *file, int indent_level
     print_indent(indent_level + 2, file);
     fprintf(file, "\"%s\": ", label->name.text);
     // Print the label's address expression
-    if(label->is_vector) {
+    if (label->is_valid) {
+      fprintf(file, "%u%s\n", label->value, (i < hh_darray_get_item_fill(&namespace->labels) - 1) ? "," : "");
+    }
+    else if(label->is_vector) {
       fprintf(file, "[");
       for (size_t j = 0; j < hh_darray_get_item_fill(&label->vector_expression); j++) {
         token_t *token = hh_darray_get_reference(&label->vector_expression, j);
@@ -167,9 +170,7 @@ void lasm_namespace_to_json(namespace_t *namespace, FILE *file, int indent_level
       }
       fprintf(file, "]%s\n", (i < hh_darray_get_item_fill(&namespace->labels) - 1) ? "," : "");
     } 
-    else if (label->is_valid) {
-      fprintf(file, "%u%s\n", label->value, (i < hh_darray_get_item_fill(&namespace->labels) - 1) ? "," : "");
-    }else{
+    else{
       fprintf(file, "null%s\n", (i < hh_darray_get_item_fill(&namespace->labels) - 1) ? "," : "");
     }
   }

@@ -13,28 +13,37 @@ static namespace_t *current_namespace = &global_space;
 static uint32_t unnamed_namespace_index = 0;
 
 static uint32_t get_size_of_file(FILE* file);
+static uint8_t is_lineend_token_id(hh_darray_t *tokens, TOKEN_ID id);
 
 //-----------------------------------------------------------------------------
 // Function to assemble the code
 uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
+  lasm_config.output_file = output;
   token_t *token = hh_darray_get_reference(tokens, 0);
+  hh_darray_init(&backward_patches, sizeof(backward_patch_t));
   while(hh_darray_get_fill(tokens) > 0){
     if(token->id == WORD){
       // Handle word token
       token_t *next_token = hh_darray_get_reference(tokens, 1);
       label_t *label = lasm_find_label_in_namespace(current_namespace, token->text);
       if(label != NULL){
-        if(!label->is_valid){
+        if(is_lineend_token_id(tokens, COLON)){
           if(label->is_vector){
             // Handle vector token
             hh_darray_pop(tokens, 0, 0); // Consume label token
             hh_darray_pop(tokens, 0, 0); // Consume open bracket
-            if(lasm_eval_token(token, &label->value) == ERR) return ERR;
-            hh_darray_pop(tokens, 0, 0); // Consume number
+            hh_darray_t out_bytes;
+            hh_darray_init(&out_bytes, 1);
+            if(lasm_parse_expression(tokens, &out_bytes) == ERR) return ERR;
+            for(int i = 0; i < hh_darray_get_fill(&out_bytes); i++){
+              uint8_t *byte = hh_darray_get_reference(&out_bytes, i);
+              label->value += (*byte) << (i * 8);
+            }
             hh_darray_pop(tokens, 0, 0); // Consume close bracket
             fseek(output, label->value, SEEK_SET);
             label->is_valid = 1;
             hh_darray_pop(tokens, 0, 0); // Consume colon
+            hh_darray_deinit(&out_bytes);
           }
           else{
             // Handle unknown label
@@ -45,7 +54,11 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             label->is_valid = 1;
           }
         }else{
-          if(lasm_parse_expression(tokens, output) == ERR) return ERR;
+          hh_darray_t out_bytes;
+          hh_darray_init(&out_bytes, 1);
+          if(lasm_parse_expression(tokens, &out_bytes) == ERR) return ERR;
+          lasm_put_bytes_to_file(&out_bytes, output);
+          hh_darray_deinit(&out_bytes);
         }
       }
       else if(next_token->id == CBRAC_O){
@@ -73,7 +86,11 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       hh_darray_pop(tokens, 0, 0); // Consume curly brace close
     }
     else if(token->id == NUMBER){
-      if(lasm_parse_expression(tokens, output) == ERR) return ERR;
+      hh_darray_t out_bytes;
+      hh_darray_init(&out_bytes, 1);
+      if(lasm_parse_expression(tokens, &out_bytes) == ERR) return ERR;
+      lasm_put_bytes_to_file(&out_bytes, output);
+      hh_darray_deinit(&out_bytes);
       // Handle number token
     }
     else if(token->id == RBRAC_O){
@@ -93,6 +110,31 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       return ERR;
     }
   }
+  // =====================
+  // Backwards patches
+  for(uint32_t i = 0; i < hh_darray_get_item_fill(&backward_patches); i++){
+    backward_patch_t *patch = hh_darray_get_reference(&backward_patches, i);
+    printf("Applying patch at offset %u for label '%s'\n", patch->offset, patch->label->name.text);
+    printf("Label value: %u\n", patch->label->value);
+    if(patch->label->is_valid){
+      fseek(output, patch->offset, SEEK_SET);
+      uint32_t label_value; fread(&label_value, patch->size, 1, output);
+      printf("Current label value: %u\n", label_value);
+      if(patch->operation == PLUS) label_value += patch->label->value;
+      else if(patch->operation == MINUS) label_value -= patch->label->value;
+      else{
+        print_error_loc(&patch->label->name);
+        printf("Unsupported patch operation for label '%s'\n", patch->label->name.text);
+        return ERR;
+      }
+      fseek(output, patch->offset, SEEK_SET);
+      fwrite(&label_value, patch->size, 1, output);
+    }else{
+      print_error_loc(&patch->label->name);
+      printf("Label '%s' can't be validated. Unsupported feature.\n", patch->label->name.text);
+      return ERR;
+    }
+  }
   return 0;
 }
 
@@ -104,34 +146,56 @@ uint32_t get_size_of_file(FILE* file){
   fseek(file, current, SEEK_SET);
   return size;
 }
-
 //-----------------------------------------------------------------------------
-uint8_t lasm_parse_expression(hh_darray_t *tokens, FILE *output){
+uint8_t is_lineend_token_id(hh_darray_t *tokens, TOKEN_ID id){
   token_t *token = hh_darray_get_reference(tokens, 0);
-  int64_t number = -1;
+  uint32_t i;
+  for(i = 0; token->id != NEWLINE; i++){
+    token = hh_darray_get_reference(tokens, i);
+  }
+  token = hh_darray_get_reference(tokens, i-2);
+  return token->id == id ? 1 : 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t lasm_parse_expression(hh_darray_t *tokens, hh_darray_t *out_bytes){
+  token_t *token = hh_darray_get_reference(tokens, 0);
+  uint32_t number = 0;
+  uint32_t size = 0;
   while(hh_darray_get_fill(tokens) > 0){
     if(token->id == NUMBER){
       // Handle number token
-      if(lasm_eval_token(token, (uint32_t*)&number) == ERR) return ERR;
+      if(lasm_eval_token(token, (uint32_t*)&number, &size, PLUS) == ERR) return ERR;
+      if(size > 0){
+        number = number & ((1 << (size * 8)) - 1);
+      }
       hh_darray_pop(tokens, 0, 0);
     }
     else if(token->id == WORD){
       // Handle word token
-      if(lasm_eval_token(token, (uint32_t*)&number) == ERR) return ERR;
+      if(lasm_eval_token(token, (uint32_t*)&number, &size, PLUS) == ERR) return ERR;
+      if(size > 0){
+        number = number & ((1 << (size * 8)) - 1);
+      }
       hh_darray_pop(tokens, 0, 0);
     }
     else if(token->id == PLUS){
       hh_darray_pop(tokens, 0, 0); // Consume plus token
       uint32_t right_number;
-      if(lasm_eval_token(token, &right_number) == ERR) return ERR;
+      if(lasm_eval_token(token, &right_number, &size, PLUS) == ERR) return ERR;
       number = (uint32_t)number + right_number;
+      if(size > 0){
+        number = number & ((1 << (size * 8)) - 1);
+      }
       hh_darray_pop(tokens, 0, 0); // Consume right operand
     }
     else if(token->id == MINUS){
       hh_darray_pop(tokens, 0, 0); // Consume plus token
       uint32_t right_number;
-      if(lasm_eval_token(token, &right_number) == ERR) return ERR;
+      if(lasm_eval_token(token, &right_number, &size, MINUS) == ERR) return ERR;
       number = (uint32_t)number - right_number;
+      if(size > 0){
+        number = number & ((1 << (size * 8)) - 1);
+      }
       hh_darray_pop(tokens, 0, 0); // Consume right operand
     }
     else{
@@ -141,11 +205,19 @@ uint8_t lasm_parse_expression(hh_darray_t *tokens, FILE *output){
       //return ERR;
     }
   }
-  if(number != -1) lasm_put_number_to_file(number, output);
+  while(number > 0){
+    hh_darray_append(out_bytes, &number);
+    number = number >> 8;
+    if(size > 0) size--;
+  }
+  while(size > 0){
+    hh_darray_append(out_bytes, 0);
+    size--;
+  }
   return 0;
 }
 //-----------------------------------------------------------------------------
-uint8_t lasm_eval_token(token_t *token, uint32_t *out_number){
+uint8_t lasm_eval_token(token_t *token, uint32_t *out_number, uint32_t *size, TOKEN_ID operation){
   if(token->id == NUMBER){
     // Handle number token
     uint32_t number;
@@ -157,15 +229,27 @@ uint8_t lasm_eval_token(token_t *token, uint32_t *out_number){
     // Handle word token
     label_t *label = lasm_find_label_in_namespace(current_namespace, token->text);
     if(label != NULL){
+      if(!label->is_vector){
+        (*size) = DEFAULT_ADDRESSING_SIZE;
+      }
       if(label->is_valid){
         // Handle vector token
         (*out_number) = label->value;
         return 0;
       }
       else{
-        print_error_loc(token);
-        printf("Label '%s' is not valid. Unsupported feature.\n", token->text);
-        return ERR;
+        backward_patch_t patch = {0};
+        patch.size = DEFAULT_ADDRESSING_SIZE;
+        patch.offset = ftell(lasm_config.output_file);
+        patch.operation = operation;
+        patch.label = label;
+        hh_darray_append(&backward_patches, &patch);
+        (*out_number) = 0;
+        (*size) = DEFAULT_ADDRESSING_SIZE;
+        return 0;
+        //print_error_loc(token);
+        //printf("Label '%s' is not valid. Unsupported feature.\n", token->text);
+        //return ERR;
       }
     }
   }
@@ -182,7 +266,14 @@ uint8_t lasm_put_number_to_file(uint32_t number, FILE *output){
   else if(number <= (1<<24)) fwrite(&number, 3, 1, output);
   else if(number <= UINT32_MAX) fwrite(&number, 4, 1, output);
 }
-
+//----------------------------------------------------------------------------
+uint8_t lasm_put_bytes_to_file(hh_darray_t* bytes, FILE *output){
+  for(size_t i = 0; i < hh_darray_get_fill(bytes); i++){
+    uint8_t byte; hh_darray_get(bytes, i, &byte);
+    fputc(byte, output);
+  }
+  return 0;
+}
 //----------------------------------------------------------------------------
 uint8_t lasm_token_to_number(token_t *token, uint32_t *number){
   if(token->id == NUMBER){

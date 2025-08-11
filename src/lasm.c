@@ -64,7 +64,7 @@ int main(int argc, char *argv[]){
   fclose(json_f);
 
   // Assemble tokens
-  FILE *output = fopen(output_name, "w");
+  FILE *output = fopen(output_name, "w+");
   if(lasm_assemble(&tokens, output) == ERR){
     printf("[ERROR] Assembling failed\n");
     return 0;

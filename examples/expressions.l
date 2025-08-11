@@ -10,6 +10,7 @@ zp{
 
 {
 start[16]:
+LABEL-2
 start - 0xa
 LABEL:
 0b11
@@ -20,5 +21,5 @@ LABEL
 }
 
 // If uncommet this line, it will give an error
-// becouse 'here' initialized lower level of scope
+// becouse 'LABEL' initialized lower level of scope
 // LABEL 
