@@ -7,7 +7,8 @@
 #include "../include/lasm_tokenizer.h"
 #define LASM_MACRO_IMPLEMENTATION
 #include "../include/lasm_macro.h"
-#include "../include/lasm_parser.h"
+#include "../include/lasm_namespace.h"
+#include "../include/lasm_assembler.h"
 #include "cpu/6502.c"
 
 //-----------------------------------------------------------------------------
@@ -56,12 +57,16 @@ int main(int argc, char *argv[]){
   //====================================
   // Parse selected cpu and assemble tokens
 
-  lasm_parser_init(&tokens);
+  lasm_namespace_init(&tokens);
 
-  FILE *outf = fopen("global_space.json", "w");
-  lasm_parser_namespace_to_json(&global_space, outf, 0);
-  fclose(outf);
-  
+  FILE *json_f = fopen("global_space.json", "w");
+  lasm_namespace_to_json(&global_space, json_f, 0);
+  fclose(json_f);
+
+  FILE *output = fopen(output_name, "w");
+  lasm_assemble(&tokens, output);
+  fclose(output);
+
   //====================================
   /*FILE *outf = fopen(output_name, "w");
   if(cpu_i){

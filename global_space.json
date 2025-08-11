@@ -1,67 +1,73 @@
 {
-  "name": "",
+  "name": "__global__",
   "level": 0,
   "constant": 1,
+  "parent": "null",
   "labels": {
   },
-  "namespaces": [
+  "childs": [
     {
       "name": "first",
       "level": 1,
       "constant": 1,
+      "parent": "__global__",
       "labels": {
         "a": ["0"],
         "b": ["4"],
         "c": ["8"],
         "d": ["12"]
       },
-      "namespaces": [
+      "childs": [
         {
           "name": "stack",
           "level": 2,
           "constant": 1,
+          "parent": "first",
           "labels": {
             "start": ["256"],
             "end": ["start", "+", "256"]
           },
-          "namespaces": [
+          "childs": [
 
           ]
         }
       ]
     }    ,
     {
-      "name": "",
+      "name": "__unnamed0__",
       "level": 1,
       "constant": 0,
+      "parent": "__global__",
       "labels": {
         "locater": ["0x1000"],
         "this": [],
         "that": []
       },
-      "namespaces": [
+      "childs": [
         {
           "name": "here",
           "level": 2,
           "constant": 1,
+          "parent": "__unnamed0__",
           "labels": {
             "maybe": [],
             "later": []
           },
-          "namespaces": [
+          "childs": [
 
           ]
         }        ,
         {
-          "name": "",
+          "name": "__unnamed1__",
           "level": 2,
           "constant": 0,
+          "parent": "__unnamed0__",
           "labels": {
             "x": [],
             "y": [],
             "z": []
           },
-          "namespaces": [
+          "childs": [
 
           ]
         }

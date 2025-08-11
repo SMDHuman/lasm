@@ -1,8 +1,8 @@
 //-----------------------------------------------------------------------------
-// lasm_parser.c 10.08.2025
+// lasm_namespace.c 10.08.2025
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
-#include "lasm_parser.h"
+#include "lasm_namespace.h"
 #include "lasm_tokenizer.h"
 
 //-----------------------------------------------------------------------------
@@ -10,13 +10,17 @@
 //-----------------------------------------------------------------------------
 
 namespace_t global_space; // Global namespace for labels
+int32_t unnamed_namespace_index = 0; // Index of the unnamed namespace
+hh_darray_t all_namespaces;
 
-uint8_t lasm_parser_init(hh_darray_t *tokens){
+uint8_t lasm_namespace_init(hh_darray_t *tokens){
   // Initialize the global namespace
   global_space = (namespace_t){0};
+  strcat(global_space.name.text, "__global__");
   global_space.constant = 1;
   hh_darray_init(&global_space.labels, sizeof(label_t));
-  hh_darray_init(&global_space.namespaces, sizeof(namespace_t));
+  hh_darray_init(&global_space.childs_index, sizeof(uint32_t));
+  hh_darray_init(&all_namespaces, sizeof(namespace_t));
   // Extract labels from tokens
   int32_t level = 0;
   namespace_t *current_namespace = &global_space;
@@ -32,15 +36,18 @@ uint8_t lasm_parser_init(hh_darray_t *tokens){
         namespace_t namespace = {0};
         namespace.level = level;
         namespace.constant = 1;
+        namespace.parent = (struct namespace_t *)current_namespace; // Set parent namespace
         memcpy(&namespace.name, token, sizeof(token_t));
         //...
         hh_darray_init(&namespace.labels, sizeof(label_t));
-        hh_darray_init(&namespace.namespaces, sizeof(namespace_t));
+        hh_darray_init(&namespace.childs_index, sizeof(uint32_t));
         //...
-        hh_darray_append(&current_namespace->namespaces, &namespace);
+        hh_darray_append(&all_namespaces, &namespace);
+        uint32_t namespace_index = hh_darray_get_item_fill(&all_namespaces) - 1;
+        hh_darray_append(&current_namespace->childs_index, &namespace_index);
         hh_darray_append(&namespace_stack, &current_namespace);
         //...
-        current_namespace = hh_darray_get_end_reference(&current_namespace->namespaces);
+        current_namespace = hh_darray_get_end_reference(&all_namespaces);
       }else{
         i--;
       }
@@ -50,17 +57,24 @@ uint8_t lasm_parser_init(hh_darray_t *tokens){
       namespace_t namespace = {0};
       namespace.level = level;
       namespace.constant = 0;
+      namespace.parent = (struct namespace_t *)current_namespace; // Set parent namespace
       //...
       memcpy(&namespace.name, token, sizeof(token_t));
       memset(&namespace.name.text, 0, sizeof(namespace.name.text));
+      strcat(namespace.name.text, "__unnamed");
+      char index_str[12];
+      sprintf(index_str, "%d__", unnamed_namespace_index++);
+      strcat(namespace.name.text, index_str);
       //...
       hh_darray_init(&namespace.labels, sizeof(label_t));
-      hh_darray_init(&namespace.namespaces, sizeof(namespace_t));
+      hh_darray_init(&namespace.childs_index, sizeof(uint32_t));
       //...
-      hh_darray_append(&current_namespace->namespaces, &namespace);
+      hh_darray_append(&all_namespaces, &namespace);
+      uint32_t namespace_index = hh_darray_get_item_fill(&all_namespaces) - 1;
+      hh_darray_append(&current_namespace->childs_index, &namespace_index);
       hh_darray_append(&namespace_stack, &current_namespace);
       //...
-      current_namespace = hh_darray_get_end_reference(&current_namespace->namespaces);
+      current_namespace = hh_darray_get_end_reference(&all_namespaces);
     }
     else if(token->id == CBRAC_C){
       if(level != 0) {
@@ -120,7 +134,7 @@ static void print_indent(int level, FILE *file){
   }
 }
 // Convert namespace to JSON recersively 
-void lasm_parser_namespace_to_json(namespace_t *namespace, FILE *file, int indent_level) {
+void lasm_namespace_to_json(namespace_t *namespace, FILE *file, int indent_level) {
   // Opening brace
   print_indent(indent_level, file);
   fprintf(file, "{\n");
@@ -130,7 +144,10 @@ void lasm_parser_namespace_to_json(namespace_t *namespace, FILE *file, int inden
   print_indent(indent_level + 1, file);
   fprintf(file, "\"level\": %d,\n", namespace->level);
   print_indent(indent_level + 1, file);
-  fprintf(file, "\"constant\": %d,\n", namespace->constant);  
+  fprintf(file, "\"constant\": %d,\n", namespace->constant);
+  print_indent(indent_level + 1, file);
+  namespace_t *parent = (namespace_t *)namespace->parent;
+  fprintf(file, "\"parent\": \"%s\",\n", parent ? parent->name.text : "null");
   // Labels array
   print_indent(indent_level + 1, file);
   fprintf(file, "\"labels\": {\n");
@@ -153,13 +170,14 @@ void lasm_parser_namespace_to_json(namespace_t *namespace, FILE *file, int inden
   
   // Namespaces array
   print_indent(indent_level + 1, file);
-  fprintf(file, "\"namespaces\": [\n");
-  for (size_t i = 0; i < hh_darray_get_item_fill(&namespace->namespaces); i++) {
-    namespace_t *child_namespace = hh_darray_get_reference(&namespace->namespaces, i);
-    lasm_parser_namespace_to_json(child_namespace, file, indent_level + 2);
+  fprintf(file, "\"childs\": [\n");
+  for (size_t i = 0; i < hh_darray_get_item_fill(&namespace->childs_index); i++) {
+    uint32_t *child_index = hh_darray_get_reference(&namespace->childs_index, i);
+    namespace_t *child_namespace = hh_darray_get_reference(&all_namespaces, *child_index);
+    lasm_namespace_to_json(child_namespace, file, indent_level + 2);
     
     // Add comma if not the last element
-    if (i < hh_darray_get_item_fill(&namespace->namespaces) - 1) {
+    if (i < hh_darray_get_item_fill(&namespace->childs_index) - 1) {
       print_indent(indent_level + 2, file);
       fprintf(file, ",\n");
     }
@@ -183,8 +201,8 @@ void lasm_print_namespace(namespace_t *namespace){
     printf("    - %s\n", label->name.text);
   }
   printf("  Child Namespaces:\n");
-  for (size_t i = 0; i < hh_darray_get_item_fill(&namespace->namespaces); i++) {
-    namespace_t *child_namespace = hh_darray_get_reference(&namespace->namespaces, i);
+  for (size_t i = 0; i < hh_darray_get_item_fill(&namespace->childs_index); i++) {
+    namespace_t *child_namespace = hh_darray_get_reference(&namespace->childs_index, i);
     printf("    - %s\n", child_namespace->name.text);
   }
 }

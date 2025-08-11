@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "*.mm4": "plaintext",
-    "lasm_parser.h": "c"
+    "lasm_parser.h": "c",
+    "lasm_namespace.h": "c"
   }
 }
