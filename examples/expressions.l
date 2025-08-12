@@ -13,7 +13,7 @@ start[16+zp.a]:
 LABEL+65536
 start - 0xa
 LABEL:
-0b11
+0b11 .[10]
 start
 zp.c
 zp.stack.end

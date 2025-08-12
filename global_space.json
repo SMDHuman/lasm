@@ -6,7 +6,7 @@
   "labels": {
     "start": 256,
     "HALT": 279,
-    "reset_vectors": 65530
+    "reset_vectors": 512
   },
   "childs": [
     {

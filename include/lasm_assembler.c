@@ -203,6 +203,26 @@ uint8_t lasm_parse_expression(hh_darray_t *tokens, hh_darray_t *out_bytes, uint8
       }
       hh_darray_pop(tokens, 0, 0); // Consume right operand
     }
+    else if(token->id == DOT){
+      hh_darray_pop(tokens, 0, 0); // Consume dot
+      if(token->id == SBRAC_O){
+        hh_darray_pop(tokens, 0, 0); // Consume left bracket
+        hh_darray_t size_value; hh_darray_init(&size_value, 1);
+        if(lasm_parse_expression(tokens, &size_value, 0, -1) == ERR) return ERR;
+        for(uint8_t i = 0; i < hh_darray_get_fill(&size_value); i++){
+          uint8_t *byte = hh_darray_get_reference(&size_value, i);
+          size += (*byte) << (i * 8);
+        }
+        size = size > max_size ? max_size : size;
+        if(token->id != SBRAC_C){
+          print_error_loc(token);
+          printf("Expected a right bracket '}' but got '%s'\n", token->text);
+          return ERR;
+        }
+        hh_darray_pop(tokens, 0, 0); // Consume right bracket
+        hh_darray_deinit(&size_value);
+      }
+    }
     else{
       break;
       //print_error_loc(token);
@@ -210,7 +230,7 @@ uint8_t lasm_parse_expression(hh_darray_t *tokens, hh_darray_t *out_bytes, uint8
       //return ERR;
     }
   }
-  if(number == 0){
+  if(number == 0 && size == 0){
     hh_darray_append(out_bytes, 0);
   }
   while(number > 0){
