@@ -49,6 +49,7 @@ int main(int argc, char *argv[]){
     if(strcmp(argv[cpu_i+1], "6502") == 0){
       printf("Assembling for 6502...\n");
       lasm_6502_init();
+      lasm_assembler.machine_assemble = lasm_6502_assemble;
     }else{
       printf("[ERROR] Machine named '%s' not found\n", argv[cpu_i+1]);
       return 0;
@@ -67,6 +68,8 @@ int main(int argc, char *argv[]){
   FILE *output = fopen(output_name, "w+");
   if(lasm_assemble(&tokens, output) == ERR){
     printf("[ERROR] Assembling failed\n");
+    //print_tokens_as_code(&tokens);
+    fclose(output);
     return 0;
   }
   fclose(output);

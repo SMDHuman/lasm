@@ -4,6 +4,9 @@
   "constant": 1,
   "parent": "null",
   "labels": {
+    "start": 256,
+    "HALT": 279,
+    "reset_vectors": 65530
   },
   "childs": [
     {
@@ -13,23 +16,11 @@
       "parent": "__global__",
       "labels": {
         "a": 0,
-        "b": 2,
-        "c": 4
+        "b": 1,
+        "c": 2
       },
       "childs": [
-        {
-          "name": "stack",
-          "level": 2,
-          "constant": 1,
-          "parent": "zp",
-          "labels": {
-            "start": 256,
-            "end": 511
-          },
-          "childs": [
 
-          ]
-        }
       ]
     }    ,
     {
@@ -38,8 +29,7 @@
       "constant": 0,
       "parent": "__global__",
       "labels": {
-        "start": 16,
-        "LABEL": 19
+        "loop": 260
       },
       "childs": [
 

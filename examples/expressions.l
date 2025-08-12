@@ -9,8 +9,8 @@ zp{
 }
 
 {
-start[16]:
-LABEL-2
+start[16+zp.a]:
+LABEL+65536
 start - 0xa
 LABEL:
 0b11
@@ -19,6 +19,8 @@ zp.c
 zp.stack.end
 LABEL
 }
+
+lda x
 
 // If uncommet this line, it will give an error
 // becouse 'LABEL' initialized lower level of scope

@@ -21,3 +21,6 @@ example_expressions: build/lasm examples/expressions.l
 
 example_namespaces: build/lasm examples/namespaces.l
 	./build/lasm examples/namespaces.l -m 6502 -o build/a.out
+
+example_fibonacci: build/lasm examples/fibonacci.l
+	./build/lasm examples/fibonacci.l -m 6502 -o build/a.out

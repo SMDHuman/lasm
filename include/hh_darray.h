@@ -44,6 +44,7 @@ typedef struct hh_darray_t{
 #define hda_is_inside hh_darray_is_inside
 #define hda_get_reference hh_darray_get_reference
 #define hda_get_end_reference hh_darray_get_end_reference
+#define hda_clear hh_darray_clear
 #endif
 
 // Initialize the array
@@ -74,6 +75,8 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 void* hh_darray_get_reference(hh_darray_t* array, size_t index); 
 // Returns the pointer to the last item in the array
 void* hh_darray_get_end_reference(hh_darray_t* array);
+// Remove all elements
+void hh_darray_clear(hh_darray_t* array);
 
 
 //-----------------------------------------------------------------------------
@@ -218,5 +221,12 @@ void* hh_darray_get_end_reference(hh_darray_t* array);
 	void* hh_darray_get_end_reference(hh_darray_t* array){
 		return hh_darray_get_reference(array, hh_darray_get_item_fill(array) - 1);
 	}
+	//-----------------------------------------------------------------------------
+	void hh_darray_clear(hh_darray_t* array){
+		while(array->fill){
+			hh_darray_popend(array, 0);
+		}
+	}
+
 	#endif
 #endif
