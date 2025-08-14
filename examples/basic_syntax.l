@@ -48,7 +48,7 @@ beq again     // Relative jump
 	print_str hi, 2
 	print_val start // prints value of 123
 	jump out
-	hi: 'hi'
+	hi: "hi"
 	start: 123
 	out:
 }
@@ -71,7 +71,7 @@ reset_vectors[0xfffa]:
 	sta c
 	lda# <there>[1] // '#' is a seperate token, the type of cpu may change the use of those characters  
 	sta c+1         // Constant values can be processed in assembler with some math operations
-	jmp c
+	jmp (c)
 >
 <print_str <ptr> <size>
 // things

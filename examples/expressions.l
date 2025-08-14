@@ -13,14 +13,13 @@ start[16+zp.a]:
 LABEL+65536
 start - 0xa
 LABEL:
-0b11 .[10]
+0b11.[10]
 start
 zp.c
 zp.stack.end
-LABEL
+LABEL 
 }
 
-lda x
 
 // If uncommet this line, it will give an error
 // becouse 'LABEL' initialized lower level of scope

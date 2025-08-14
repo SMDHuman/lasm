@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// lasm_assembler.c 10.08.2025
+// lasm_assembler.c 14.08.2025
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
 #include "lasm_assembler.h"
@@ -96,8 +96,19 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       hh_darray_deinit(&out_bytes);
       // Handle number token
     }
+    else if(token->id == STRING_DB){
+      hh_darray_t out_bytes;
+      hh_darray_init(&out_bytes, 1);
+      if(lasm_parse_expression(tokens, &out_bytes, 1, -1) == ERR) return ERR;
+      lasm_put_bytes_to_file(&out_bytes, output);
+      hh_darray_deinit(&out_bytes);
+    }
     else if(token->id == RBRAC_O){
-      // Handle '(' token
+      hh_darray_t out_bytes;
+      hh_darray_init(&out_bytes, 1);
+      if(lasm_parse_expression(tokens, &out_bytes, 1, -1) == ERR) return ERR;
+      lasm_put_bytes_to_file(&out_bytes, output);
+      hh_darray_deinit(&out_bytes);
     }
     else{
       print_error_loc(token);
@@ -155,38 +166,48 @@ uint8_t lasm_parse_expression(hh_darray_t *tokens, hh_darray_t *out_bytes, uint8
     if(token->id == NUMBER){
       // Handle number token
       if(lasm_eval_token(token, (uint32_t*)&number, &size, PLUS, stash_bwp, max_size) == ERR) return ERR;
+      hh_darray_pop(tokens, 0, 0);
+      if(lasm_check_indexing(tokens, &number) == ERR) return ERR;
       if(size > 0){
         number = number & ((1 << (size * 8)) - 1);
       }
-      hh_darray_pop(tokens, 0, 0);
     }
     else if(token->id == WORD){
       // Handle word token
       if(lasm_eval_token(token, (uint32_t*)&number, &size, PLUS, stash_bwp, max_size) == ERR) return ERR;
+      hh_darray_pop(tokens, 0, 0);
+      if(lasm_check_indexing(tokens, &number) == ERR) return ERR;
       if(size > 0){
         number = number & ((1 << (size * 8)) - 1);
       }
-      hh_darray_pop(tokens, 0, 0);
+    }
+    if(token->id == STRING_DB){
+      for(uint32_t i = 0; i < strlen(token->text); i++){
+        hh_darray_append(out_bytes, &token->text[i]);
+      }
+      hh_darray_pop(tokens, 0, 0); // Consume String
     }
     else if(token->id == PLUS){
       hh_darray_pop(tokens, 0, 0); // Consume plus token
       uint32_t right_number;
       if(lasm_eval_token(token, &right_number, &size, PLUS, stash_bwp, max_size) == ERR) return ERR;
+      hh_darray_pop(tokens, 0, 0); // Consume right operand
+      if(lasm_check_indexing(tokens, &number) == ERR) return ERR;
       number = (uint32_t)number + right_number;
       if(size > 0){
         number = number & ((1 << (size * 8)) - 1);
       }
-      hh_darray_pop(tokens, 0, 0); // Consume right operand
     }
     else if(token->id == MINUS){
       hh_darray_pop(tokens, 0, 0); // Consume plus token
       uint32_t right_number;
       if(lasm_eval_token(token, &right_number, &size, MINUS, stash_bwp, max_size) == ERR) return ERR;
+      hh_darray_pop(tokens, 0, 0); // Consume right operand
+      if(lasm_check_indexing(tokens, &number) == ERR) return ERR;
       number = (uint32_t)number - right_number;
       if(size > 0){
         number = number & ((1 << (size * 8)) - 1);
       }
-      hh_darray_pop(tokens, 0, 0); // Consume right operand
     }
     else if(token->id == DOT){
       hh_darray_pop(tokens, 0, 0); // Consume dot
@@ -228,6 +249,29 @@ uint8_t lasm_parse_expression(hh_darray_t *tokens, hh_darray_t *out_bytes, uint8
     size--;
   }
   return 0;
+}
+
+//-----------------------------------------------------------------------------
+uint8_t lasm_check_indexing(hh_darray_t* tokens, uint32_t* number){
+  // byte indexing "exp[exp]"
+  token_t* token = hh_darray_get_reference(tokens, 0);
+  if(token->id == SBRAC_O){
+    hh_darray_pop(tokens, 0, 0); // Consume '['
+    hh_darray_t index_value; hh_darray_init(&index_value, 1);
+    if(lasm_parse_expression(tokens, &index_value, 0, -1) == ERR) return ERR;
+    if(token->id != SBRAC_C){
+      print_error_loc(token);
+      printf("Expected a right bracket ']' but got '%s'\n", token->text);
+      return ERR;
+    }
+    hh_darray_pop(tokens, 0, 0); // Consume ']'
+    uint32_t index;
+    for(uint8_t i = 0; i < hh_darray_get_fill(&index_value); i++){
+      uint8_t* byte = hh_darray_get_reference(&index_value, i);
+      index += (*byte) << (i * 8);
+    }
+    (*number) = (*number >> index) & 0xFF;
+  }
 }
 //-----------------------------------------------------------------------------
 uint8_t lasm_eval_token(token_t *token, uint32_t *out_number, uint32_t *size, TOKEN_ID operation, uint8_t stash_bwp, uint32_t max_size){

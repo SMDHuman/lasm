@@ -52,7 +52,7 @@ loop:
   BEQ loop    // Branch to loop if equal (Z=1)
   BNE loop    // Branch to loop if not equal (Z=0)
 
-// Output of this file would be 
+// Output of this file should be 
 //18     // CLC
 //38     // SEC
 

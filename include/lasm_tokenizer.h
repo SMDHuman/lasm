@@ -38,6 +38,8 @@ typedef enum{
 	PLUS,
 	MINUS,
 	SLASH,
+	BITSHIFT_L,
+	BITSHIFT_R,
 	BSLASH,
 	ASTERISK,
 	QUEST,
@@ -91,20 +93,35 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		// Check chars
 		token.id = NONE;
 		memset(token.text, 0 ,MAX_TOKEN_SIZE);
-		if(cr == '<') token.id=MACRO_O;
+		if(cr == '<'){
+						char next = fgetc(file);
+						if(next == '<'){
+							token.id = BITSHIFT_L;
+						}else{
+							fseek(file, -1, SEEK_CUR);
+							token.id=MACRO_O;
+						}
+		}
 		if(cr == '>'){
-						token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
-						token_t t2; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-2, &t2);
-						if(t1.id == WORD && t2.id == MACRO_O){
-							hh_darray_popend(tokens, 0);
-							hh_darray_popend(tokens, 0);
-							t1.id = MACRO_ARG;
-							hh_darray_append(tokens, &t1);
-							col++;
-						}else {
-							token.id=MACRO_C;
+						char next = fgetc(file);
+						if(next == '>'){
+							token.id = BITSHIFT_R;
+						}else{
+							fseek(file, -1, SEEK_CUR);
+							token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
+							token_t t2; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-2, &t2);
+							if(t1.id == WORD && t2.id == MACRO_O){
+								hh_darray_popend(tokens, 0);
+								hh_darray_popend(tokens, 0);
+								t1.id = MACRO_ARG;
+								hh_darray_append(tokens, &t1);
+								col++;
+							}else {
+								token.id=MACRO_C;
+							}
 						}
 					}
+
 		if(cr == '(') token.id=RBRAC_O;
 		if(cr == ')') token.id=RBRAC_C;
 		if(cr == '[') token.id=SBRAC_O;
@@ -146,6 +163,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 			token.line=line;
 			token.col=col-1;
 			token.text[0] = cr;
+			if(token.id == BITSHIFT_L || token.id == BITSHIFT_R) token.text[1] = token.text[0];
 			hh_darray_append(tokens, &token);			
 		}
 		// Parse numbers

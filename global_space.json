@@ -4,9 +4,63 @@
   "constant": 1,
   "parent": "null",
   "labels": {
-    "loop": 49
+    "start": 32768,
+    "here": 32805,
+    "reset_vectors": 65530
   },
   "childs": [
+    {
+      "name": "zp",
+      "level": 1,
+      "constant": 1,
+      "parent": "__global__",
+      "labels": {
+        "a": 0,
+        "b": 2,
+        "c": 4,
+        "end": 255
+      },
+      "childs": [
+        {
+          "name": "io",
+          "level": 2,
+          "constant": 1,
+          "parent": "zp",
+          "labels": {
+            "text_size": 24,
+            "text_pointer": 26
+          },
+          "childs": [
 
+          ]
+        }
+      ]
+    }    ,
+    {
+      "name": "__unnamed0__",
+      "level": 1,
+      "constant": 0,
+      "parent": "__global__",
+      "labels": {
+        "again": 32775
+      },
+      "childs": [
+
+      ]
+    }    ,
+    {
+      "name": "__unnamed1__",
+      "level": 1,
+      "constant": 0,
+      "parent": "__global__",
+      "labels": {
+        "hi": 32801,
+        "start": 32804,
+        "out": 32805
+      },
+      "childs": [
+
+      ]
+    }
   ]
 }

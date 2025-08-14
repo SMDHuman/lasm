@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// lasm_assembler.h 10.08.2025
+// lasm_assembler.h 14.08.2025
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
 #ifndef LASM_ASSEMBLER_H
@@ -37,5 +37,6 @@ uint8_t lasm_token_to_number(token_t *token, uint32_t *number);
 uint8_t lasm_put_bytes_to_file(hh_darray_t* bytes, FILE *output);
 uint8_t lasm_put_number_to_file(uint32_t number, FILE *output);
 uint8_t lasm_eval_token(token_t *token, uint32_t *out_number, uint32_t *size, TOKEN_ID operation, uint8_t stash_bwp, uint32_t max_size);
+uint8_t lasm_check_indexing(hh_darray_t* tokens, uint32_t* number);
 
 #endif // LASM_ASSEMBLER_H
