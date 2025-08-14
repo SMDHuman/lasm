@@ -150,7 +150,6 @@ void lasm_6502_init(){
 uint8_t lasm_6502_assemble(void){
   token_t *token = hh_darray_get_reference(lasm_assembler.tokens, 0);
   uint8_t inst_id = is_instruction(token);
-  printf("instruction token: %s\n", token->text);
   if(inst_id == 255){
     // Handle unknown instruction
     print_error_loc(token);
@@ -335,8 +334,6 @@ uint8_t lasm_6502_assemble(void){
   for(uint8_t i = 0; i < hh_darray_get_fill(&value_bytes); i++){
     uint8_t value; hh_darray_get(&value_bytes, i, &value);
     fputc(value, lasm_assembler.output_file);
-    printf("instruction byte: %02X ", instruction_byte);
-    printf("value after that: %02X\n", value);
   }
 
 

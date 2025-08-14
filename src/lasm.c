@@ -9,6 +9,7 @@
 #include "lasm_macro.h"
 #include "lasm_namespace.h"
 #include "lasm_assembler.h"
+#include "lasm_parser.h"
 #include "cpu/6502.c"
 
 //-----------------------------------------------------------------------------

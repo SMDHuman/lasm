@@ -4,9 +4,6 @@
   "constant": 1,
   "parent": "null",
   "labels": {
-    "start": 32768,
-    "here": 32805,
-    "reset_vectors": 65530
   },
   "childs": [
     {
@@ -17,18 +14,17 @@
       "labels": {
         "a": 0,
         "b": 2,
-        "c": 4,
-        "end": 255
+        "c": 4
       },
       "childs": [
         {
-          "name": "io",
+          "name": "stack",
           "level": 2,
           "constant": 1,
           "parent": "zp",
           "labels": {
-            "text_size": 24,
-            "text_pointer": 26
+            "start": 256,
+            "end": 511
           },
           "childs": [
 
@@ -42,21 +38,8 @@
       "constant": 0,
       "parent": "__global__",
       "labels": {
-        "again": 32775
-      },
-      "childs": [
-
-      ]
-    }    ,
-    {
-      "name": "__unnamed1__",
-      "level": 1,
-      "constant": 0,
-      "parent": "__global__",
-      "labels": {
-        "hi": 32801,
-        "start": 32804,
-        "out": 32805
+        "start": 16,
+        "LABEL": 19
       },
       "childs": [
 

@@ -1,11 +1,14 @@
-build/lasm: build src/lasm.c include/* src/cpu/*  build/lasm_namespace.o build/lasm_assembler.o
-	gcc src/lasm.c build/lasm_namespace.o build/lasm_assembler.o -o build/lasm -I include -I src/cpu
+build/lasm: build src/lasm.c include/* src/cpu/*  build/lasm_namespace.o build/lasm_assembler.o build/lasm_parser.o
+	gcc src/lasm.c build/lasm_namespace.o build/lasm_assembler.o build/lasm_parser.o -o build/lasm -I include -I src/cpu 
 
 build/lasm_namespace.o: include/lasm_namespace.c
 	gcc -c include/lasm_namespace.c -o build/lasm_namespace.o -I include -I src/cpu
 
 build/lasm_assembler.o: include/lasm_assembler.c
 	gcc -c include/lasm_assembler.c -o build/lasm_assembler.o -I include -I src/cpu
+
+build/lasm_parser.o: include/lasm_parser.c
+	gcc -c include/lasm_parser.c -o build/lasm_parser.o -I include -I src/cpu
 
 build:
 	mkdir build

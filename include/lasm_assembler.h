@@ -21,6 +21,7 @@ typedef struct{
   uint8_t (*machine_assemble)(void); // Function to assemble machine code
 } assembler_t;
 
+
 typedef struct{
   uint8_t size; // Size of the patch in bytes
   uint32_t offset; // Offset in the output file
