@@ -55,6 +55,10 @@ typedef struct{
 }token_t;
 
 uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens);
+uint8_t is_lineend_token_id(hh_darray_t *tokens, uint32_t index, TOKEN_ID id);
+uint8_t is_lineend_token_text(hh_darray_t *tokens, uint32_t index, const char* text);
+char char_upper(char c);
+char char_lower(char c);
 uint8_t is_alpha(char c);
 uint8_t is_inside(char c, const char* chars);
 void print_error_loc(token_t *token);
@@ -147,7 +151,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		// Parse numbers
 		if(is_inside(cr, "1234567890")){
 			memset(word, 0, MAX_TOKEN_SIZE);
-			while(is_inside(cr, "1234567890xabcdef")){
+			while(is_inside(char_lower(cr), "1234567890xabcdef")){
 				strcat(word, &cr);
 				cr = fgetc(file);
 				col++;
@@ -215,6 +219,27 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 	return 0;
 }
 //-----------------------------------------------------------------------------
+// Checks if the token before first newline equal to given id
+uint8_t is_lineend_token_id(hh_darray_t *tokens, uint32_t index, TOKEN_ID id){
+  token_t *token = hh_darray_get_reference(tokens, index);
+  uint32_t i;
+  for(i = index + 1; token->id != NEWLINE; i++){
+    token = hh_darray_get_reference(tokens, i);
+  }
+  token = hh_darray_get_reference(tokens, i-2);
+  return token->id == id ? 1 : 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t is_lineend_token_text(hh_darray_t *tokens, uint32_t index, const char* text){
+  token_t *token = hh_darray_get_reference(tokens, index);
+  uint32_t i;
+  for(i = index + 1; token->id != NEWLINE; i++){
+    token = hh_darray_get_reference(tokens, i);
+  }
+  token = hh_darray_get_reference(tokens, i-2);
+  return strcmp(token->text, text) == 0 ? 1 : 0;
+}
+//-----------------------------------------------------------------------------
 uint8_t is_alpha(char c){
 	if(((uint8_t)c <= 90 && (uint8_t)c >= 65) || 
 	((uint8_t)c <= 122 && (uint8_t)c >= 97)) return 1;
@@ -226,6 +251,16 @@ uint8_t is_inside(char c, const char* chars){
 		if(c == chars[i]) return c;
 	}
 	return 0;
+}
+//-----------------------------------------------------------------------------
+char char_upper(char c){
+	if((uint8_t)c <= 122 && (uint8_t)c >= 97) return (char)((uint8_t)c - 32);
+	return c;
+}
+//-----------------------------------------------------------------------------
+char char_lower(char c){
+	if((uint8_t)c <= 90 && (uint8_t)c >= 65) return (char)((uint8_t)c + 32);
+	return c;
 }
 //-----------------------------------------------------------------------------
 void print_error_loc(token_t *token){

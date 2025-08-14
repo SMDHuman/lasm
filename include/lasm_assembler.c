@@ -10,7 +10,6 @@
 assembler_t lasm_assembler;
 
 static uint32_t get_size_of_file(FILE* file);
-static uint8_t is_lineend_token_id(hh_darray_t *tokens, TOKEN_ID id);
 
 //-----------------------------------------------------------------------------
 // Function to assemble the code
@@ -29,7 +28,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       token_t *next_token = hh_darray_get_reference(tokens, 1);
       label_t *label = lasm_find_label_in_namespace(lasm_assembler.current_namespace, token->text);
       if(label != NULL){
-        if(is_lineend_token_id(tokens, COLON)){
+        if(is_lineend_token_id(tokens, 0, COLON)){
           if(label->is_vector){
             // Handle vector token
             hh_darray_pop(tokens, 0, 0); // Consume label token
@@ -146,17 +145,6 @@ uint32_t get_size_of_file(FILE* file){
   uint32_t size = ftell(file);
   fseek(file, current, SEEK_SET);
   return size;
-}
-//-----------------------------------------------------------------------------
-// Checks if the token before first newline equal to given id
-uint8_t is_lineend_token_id(hh_darray_t *tokens, TOKEN_ID id){
-  token_t *token = hh_darray_get_reference(tokens, 0);
-  uint32_t i;
-  for(i = 0; token->id != NEWLINE; i++){
-    token = hh_darray_get_reference(tokens, i);
-  }
-  token = hh_darray_get_reference(tokens, i-2);
-  return token->id == id ? 1 : 0;
 }
 //-----------------------------------------------------------------------------
 uint8_t lasm_parse_expression(hh_darray_t *tokens, hh_darray_t *out_bytes, uint8_t stash_bwp, uint32_t max_size){

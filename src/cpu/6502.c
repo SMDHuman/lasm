@@ -20,6 +20,22 @@
   zpg,Y		zeropage, Y-indexed		OPC $LL,Y			operand is zeropage address; effective address is address incremented by Y without carry **
 */
 
+char addressing_mode_words[16][16] = {
+  "accumulator",
+  "absolute",
+  "absolute,X",
+  "absolute,Y",
+  "immediate",
+  "implied",
+  "indirect",
+  "X,indirect",
+  "indirect,Y",
+  "relative",
+  "zeropage",
+  "zeropage,X",
+  "zeropage,Y"
+};
+
 typedef enum{
   ADM_ACCUM = 1<<0,
   ADM_ABS = 1<<1,
@@ -36,7 +52,25 @@ typedef enum{
   ADM_ZPG_Y = 1<<12,
 }addressing_modes_e;
 
-static char char_upper(char c);
+uint32_t addressing_modes_index_map(addressing_modes_e mode) {
+  switch (mode) {
+    case ADM_ACCUM: return 0;
+    case ADM_ABS: return 1;
+    case ADM_ABS_X: return 2;
+    case ADM_ABS_Y: return 3;
+    case ADM_IMM: return 4;
+    case ADM_IMPL: return 5;
+    case ADM_IND: return 6;
+    case ADM_X_IND: return 7;
+    case ADM_IND_Y: return 8;
+    case ADM_REL: return 9;
+    case ADM_ZPG: return 10;
+    case ADM_ZPG_X: return 11;
+    case ADM_ZPG_Y: return 12;
+    default: return mode; // Return the mode as index if not found
+  }
+}
+
 static uint8_t is_instruction(token_t *token);
 
 static uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode);
@@ -116,6 +150,7 @@ void lasm_6502_init(){
 uint8_t lasm_6502_assemble(void){
   token_t *token = hh_darray_get_reference(lasm_assembler.tokens, 0);
   uint8_t inst_id = is_instruction(token);
+  printf("instruction token: %s\n", token->text);
   if(inst_id == 255){
     // Handle unknown instruction
     print_error_loc(token);
@@ -123,39 +158,80 @@ uint8_t lasm_6502_assemble(void){
     return ERR;
   }
   hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume instruction
+  //==================================
   // Determine addressing mode
   addressing_modes_e addr_mode = 0;
+  // Immediate mode
   if(token->id == HASH){
     hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume '#'
     addr_mode = ADM_IMM;
   }
+  // Implied mode
   else if(token->id == NEWLINE){
     addr_mode = ADM_IMPL; 
   }
+  // Accumulator mode
   else if(token->id == WORD && 
           strlen(token->text) == 1 && 
           char_upper(token->text[0]) == 'A'){
         addr_mode = ADM_ACCUM;
+    hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'A'
   }
+  // Indirect mode
+  else if(token->id == RBRAC_O && 
+          (is_lineend_token_id(lasm_assembler.tokens, 0, RBRAC_C) || 
+          is_lineend_token_text(lasm_assembler.tokens, 0, "Y"))){
+    addr_mode = ADM_IND;
+    hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume '('
+  }
+  // Relative, Zero Page or Absolute mode
   else{
-    if(inst_addrs_mods[inst_id] == ADM_REL){
+    // Prioritize relative mode if instruction supports it
+    if(inst_addrs_mods[inst_id] & ADM_REL){
       addr_mode = ADM_REL;
     }else{
       addr_mode = ADM_ZPG|ADM_ABS;
     }
   }
- // Handle immediate values
+  //==================================
+  // Handle argument values
   hh_darray_t value_bytes; hh_darray_init(&value_bytes, 1);
   if(addr_mode & (ADM_ZPG|ADM_ABS)){
     if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 0, -1) == ERR) return ERR;
     if(hh_darray_get_fill(&value_bytes) == 1){
-      addr_mode = ADM_ZPG;
+      if(token->id == COMMA){
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
+        if(char_upper(token->text[0]) == 'X' && strlen(token->text) == 1){
+          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
+          addr_mode = ADM_ZPG_X;
+        }else if(char_upper(token->text[0]) == 'Y' && strlen(token->text) == 1){
+          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
+          addr_mode = ADM_ZPG_Y;
+        }else{
+          print_error_loc(token);
+          printf("[ERROR] Expected 'X' or 'Y' after ','\n");
+          return ERR;
+        }
+      }else{
+        addr_mode = ADM_ZPG;        
+      }
     }else if (hh_darray_get_fill(&value_bytes) == 2){
-      addr_mode = ADM_ABS;
-    }else{
-      print_error_loc(token);
-      printf("[ERROR] Too big number for this addressing mode.\n");
-      return ERR;
+      if(token->id == COMMA){
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
+        if(char_upper(token->text[0]) == 'X' && strlen(token->text) == 1){
+          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
+          addr_mode = ADM_ABS_X;
+        }else if(char_upper(token->text[0]) == 'Y' && strlen(token->text) == 1){
+          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
+          addr_mode = ADM_ABS_Y;
+        }else{
+          print_error_loc(token);
+          printf("[ERROR] Expected 'X' or 'Y' after ','\n");
+          return ERR;
+        }
+      }else{
+        addr_mode = ADM_ABS;        
+      }
     }
   }
   else if(addr_mode == ADM_IMM){
@@ -184,11 +260,72 @@ uint8_t lasm_6502_assemble(void){
       hh_darray_popend(&value_bytes, 0);
     }
   }
+  else if(addr_mode == ADM_IND){
+    if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 0, -1) == ERR) return ERR;
+    if (token->id == RBRAC_C){
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
+      if(token->id == COMMA){
+        if(hh_darray_get_fill(&value_bytes) > 1){
+          print_error_loc(token);
+          printf("[ERROR] Expected 1 byte but got %lu bytes\n", hh_darray_get_fill(&value_bytes));
+          return ERR;
+        }
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
+        if(char_upper(token->text[0]) == 'Y' && strlen(token->text) == 1){
+          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
+          addr_mode = ADM_IND_Y;
+        }
+        else{
+          print_error_loc(token);
+          printf("Expected 'Y' after ','\n");
+          return ERR;
+        }
+      }
+      else{
+        if(hh_darray_get_fill(&value_bytes) < 2){
+          // Ensure its 2 byte long
+          hh_darray_append(&value_bytes, 0);
+        }
+      }
+    }
+    else{
+      // Ensure its 1 byte from code
+      if(hh_darray_get_fill(&value_bytes) > 1){
+        print_error_loc(token);
+        printf("[ERROR] Expected 1 byte but got %lu bytes\n", hh_darray_get_fill(&value_bytes));
+        return ERR;
+      }
+      if(token->id == COMMA){
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
+        if(char_upper(token->text[0]) == 'X' && strlen(token->text) == 1){
+          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
+          addr_mode = ADM_X_IND;
+        }else{
+          print_error_loc(token);
+          printf("[ERROR] Expected 'X' after ','\n");
+          return ERR;
+        }
+        
+        if(token->id != RBRAC_C){
+          print_error_loc(token);
+          printf("Expected a right bracket ')' but got '%s'\n", token->text);
+          return ERR;
+        }
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
+      }
+      else{
+        print_error_loc(token);
+        printf("Invalid Indirect Addressing Mode\n");
+        return ERR;
+      }
+    }
+  }
   //=================================================
   // Is this addressing mode valid with instruction
   if(!(inst_addrs_mods[inst_id] & addr_mode)){
     print_error_loc(token);
-    printf("[ERROR] Addressing mode not valid for instruction '%s'\n", token->text);
+    char word[4]={0}; memcpy(&word, inst_words[inst_id], 3); 
+    printf("Addressing mode '%s' not valid for instruction '%s'\n", addressing_mode_words[addressing_modes_index_map(addr_mode)], word);
     return ERR;
   }
   // Get instruction byte
@@ -198,6 +335,8 @@ uint8_t lasm_6502_assemble(void){
   for(uint8_t i = 0; i < hh_darray_get_fill(&value_bytes); i++){
     uint8_t value; hh_darray_get(&value_bytes, i, &value);
     fputc(value, lasm_assembler.output_file);
+    printf("instruction byte: %02X ", instruction_byte);
+    printf("value after that: %02X\n", value);
   }
 
 
@@ -220,13 +359,6 @@ uint8_t is_instruction(token_t *token){
   return 255;
 }
 
-char char_upper(char c){
-  if(97 <= c && c <= 122){
-    return c - 32;
-  }
-  return c;
-}
-
 uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
   switch (inst_id){
     case 0: // ADC
@@ -241,14 +373,181 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_IND_Y: return 0x71;
       }
       break;
+    case 1: // AND
+      switch (addr_mode){
+        case ADM_IMM: return 0x29;
+        case ADM_ZPG: return 0x25;
+        case ADM_ZPG_X: return 0x35;
+        case ADM_ABS: return 0x2D;
+        case ADM_ABS_X: return 0x3D;
+        case ADM_ABS_Y: return 0x39;
+        case ADM_X_IND: return 0x21;
+        case ADM_IND_Y: return 0x31;
+      }
+      break;
+    case 2: // ASL
+      switch (addr_mode){
+        case ADM_ACCUM: return 0x0A;
+        case ADM_ZPG: return 0x06;
+        case ADM_ZPG_X: return 0x16;
+        case ADM_ABS: return 0x0E;
+        case ADM_ABS_X: return 0x1E;
+      }
+      break;
     case 3: // BCC
       switch (addr_mode){
         case ADM_REL: return 0x90;
       }
       break;
+    case 4: // BCS
+      switch (addr_mode){
+        case ADM_REL: return 0xB0;
+      }
+      break;
+    case 5: // BEQ
+      switch (addr_mode){
+        case ADM_REL: return 0xF0;
+      }
+      break;
+    case 6: // BIT
+      switch (addr_mode){
+        case ADM_ZPG: return 0x24;
+        case ADM_ABS: return 0x2C;
+      }
+      break;
+    case 7: // BMI
+      switch (addr_mode){
+        case ADM_REL: return 0x30;
+      }
+      break;
+    case 8: // BNE
+      switch (addr_mode){
+        case ADM_REL: return 0xD0;
+      }
+      break;
+    case 9: // BPL
+      switch (addr_mode){
+        case ADM_REL: return 0x10;
+      }
+      break;
+    case 10: // BRK
+      switch (addr_mode){
+        case ADM_IMPL: return 0x00;
+      }
+      break;
+    case 11: // BVC
+      switch (addr_mode){
+        case ADM_REL: return 0x50;
+      }
+      break;
+    case 12: // BVS
+      switch (addr_mode){
+        case ADM_REL: return 0x70;
+      }
+      break;
     case 13: // CLC
       switch (addr_mode){
         case ADM_IMPL: return 0x18;
+      }
+      break;
+    case 14: // CLD
+      switch (addr_mode){
+        case ADM_IMPL: return 0xD8;
+      }
+      break;
+    case 15: // CLI
+      switch (addr_mode){
+        case ADM_IMPL: return 0x58;
+      }
+      break;
+    case 16: // CLV
+      switch (addr_mode){
+        case ADM_IMPL: return 0xB8;
+      }
+      break;
+    case 17: // CMP
+      switch (addr_mode){
+        case ADM_IMM: return 0xC9;
+        case ADM_ZPG: return 0xC5;
+        case ADM_ZPG_X: return 0xD5;
+        case ADM_ABS: return 0xCD;
+        case ADM_ABS_X: return 0xDD;
+        case ADM_ABS_Y: return 0xD9;
+        case ADM_X_IND: return 0xC1;
+        case ADM_IND_Y: return 0xD1;
+      }
+      break;
+    case 18: // CPX
+      switch (addr_mode){
+        case ADM_IMM: return 0xE0;
+        case ADM_ZPG: return 0xE4;
+        case ADM_ABS: return 0xEC;
+      }
+      break;
+    case 19: // CPY
+      switch (addr_mode){
+        case ADM_IMM: return 0xC0;
+        case ADM_ZPG: return 0xC4;
+        case ADM_ABS: return 0xCC;
+      }
+      break;
+    case 20: // DEC
+      switch (addr_mode){
+        case ADM_ZPG: return 0xC6;
+        case ADM_ZPG_X: return 0xD6;
+        case ADM_ABS: return 0xCE;
+        case ADM_ABS_X: return 0xDE;
+      }
+      break;
+    case 21: // DEX
+      switch (addr_mode){
+        case ADM_IMPL: return 0xCA;
+      }
+      break;
+    case 22: // DEY
+      switch (addr_mode){
+        case ADM_IMPL: return 0x88;
+      }
+      break;
+    case 23: // EOR
+      switch (addr_mode){
+        case ADM_IMM: return 0x49;
+        case ADM_ZPG: return 0x45;
+        case ADM_ZPG_X: return 0x55;
+        case ADM_ABS: return 0x4D;
+        case ADM_ABS_X: return 0x5D;
+        case ADM_ABS_Y: return 0x59;
+        case ADM_X_IND: return 0x41;
+        case ADM_IND_Y: return 0x51;
+      }
+      break;
+    case 24: // INC
+      switch (addr_mode){
+        case ADM_ZPG: return 0xE6;
+        case ADM_ZPG_X: return 0xF6;
+        case ADM_ABS: return 0xEE;
+        case ADM_ABS_X: return 0xFE;
+      }
+      break;
+    case 25: // INX
+      switch (addr_mode){
+        case ADM_IMPL: return 0xE8;
+      }
+      break;
+    case 26: // INY
+      switch (addr_mode){
+        case ADM_IMPL: return 0xC8;
+      }
+      break;
+    case 27: // JMP
+      switch (addr_mode){
+        case ADM_ABS: return 0x4C;
+        case ADM_IND: return 0x6C;
+      }
+      break;
+    case 28: // JSR
+      switch (addr_mode){
+        case ADM_ABS: return 0x20;
       }
       break;
     case 29: // LDA
@@ -263,6 +562,125 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_IND_Y: return 0xB1;
       }
       break;
+    case 30: // LDX
+      switch (addr_mode){
+        case ADM_IMM: return 0xA2;
+        case ADM_ZPG: return 0xA6;
+        case ADM_ZPG_Y: return 0xB6;
+        case ADM_ABS: return 0xAE;
+        case ADM_ABS_Y: return 0xBE;
+      }
+      break;
+    case 31: // LDY
+      switch (addr_mode){
+        case ADM_IMM: return 0xA0;
+        case ADM_ZPG: return 0xA4;
+        case ADM_ZPG_X: return 0xB4;
+        case ADM_ABS: return 0xAC;
+        case ADM_ABS_X: return 0xBC;
+      }
+      break;
+    case 32: // LSR
+      switch (addr_mode){
+        case ADM_ACCUM: return 0x4A;
+        case ADM_ZPG: return 0x46;
+        case ADM_ZPG_X: return 0x56;
+        case ADM_ABS: return 0x4E;
+        case ADM_ABS_X: return 0x5E;
+      }
+      break;
+    case 33: // NOP
+      switch (addr_mode){
+        case ADM_IMPL: return 0xEA;
+      }
+      break;
+    case 34: // ORA
+      switch (addr_mode){
+        case ADM_IMM: return 0x09;
+        case ADM_ZPG: return 0x05;
+        case ADM_ZPG_X: return 0x15;
+        case ADM_ABS: return 0x0D;
+        case ADM_ABS_X: return 0x1D;
+        case ADM_ABS_Y: return 0x19;
+        case ADM_X_IND: return 0x01;
+        case ADM_IND_Y: return 0x11;
+      }
+      break;
+    case 35: // PHA
+      switch (addr_mode){
+        case ADM_IMPL: return 0x48;
+      }
+      break;
+    case 36: // PHP
+      switch (addr_mode){
+        case ADM_IMPL: return 0x08;
+      }
+      break;
+    case 37: // PLA
+      switch (addr_mode){
+        case ADM_IMPL: return 0x68;
+      }
+      break;
+    case 38: // PLP
+      switch (addr_mode){
+        case ADM_IMPL: return 0x28;
+      }
+      break;
+    case 39: // ROL
+      switch (addr_mode){
+        case ADM_ACCUM: return 0x2A;
+        case ADM_ZPG: return 0x26;
+        case ADM_ZPG_X: return 0x36;
+        case ADM_ABS: return 0x2E;
+        case ADM_ABS_X: return 0x3E;
+      }
+      break;
+    case 40: // ROR
+      switch (addr_mode){
+        case ADM_ACCUM: return 0x6A;
+        case ADM_ZPG: return 0x66;
+        case ADM_ZPG_X: return 0x76;
+        case ADM_ABS: return 0x6E;
+        case ADM_ABS_X: return 0x7E;
+      }
+      break;
+    case 41: // RTI
+      switch (addr_mode){
+        case ADM_IMPL: return 0x40;
+      }
+      break;
+    case 42: // RTS
+      switch (addr_mode){
+        case ADM_IMPL: return 0x60;
+      }
+      break;
+    case 43: // SBC
+      switch (addr_mode){
+        case ADM_IMM: return 0xE9;
+        case ADM_ZPG: return 0xE5;
+        case ADM_ZPG_X: return 0xF5;
+        case ADM_ABS: return 0xED;
+        case ADM_ABS_X: return 0xFD;
+        case ADM_ABS_Y: return 0xF9;
+        case ADM_X_IND: return 0xE1;
+        case ADM_IND_Y: return 0xF1;
+      }
+      break;
+    case 44: // SEC
+      switch (addr_mode){
+        case ADM_IMPL: return 0x38;
+      }
+      break;
+    case 45: // SED
+      switch (addr_mode){
+        case ADM_IMPL: return 0xF8;
+      }
+      break;
+    case 46: // SEI
+      switch (addr_mode){
+        case ADM_IMPL: return 0x78;
+      }
+      break;
     case 47: // STA
       switch (addr_mode){
         case ADM_ZPG: return 0x85;
@@ -272,6 +690,50 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0x99;
         case ADM_X_IND: return 0x81;
         case ADM_IND_Y: return 0x91;
+      }
+      break;
+    case 48: // STX
+      switch (addr_mode){
+        case ADM_ZPG: return 0x86;
+        case ADM_ZPG_Y: return 0x96;
+        case ADM_ABS: return 0x8E;
+      }
+      break;
+    case 49: // STY
+      switch (addr_mode){
+        case ADM_ZPG: return 0x84;
+        case ADM_ZPG_X: return 0x94;
+        case ADM_ABS: return 0x8C;
+      }
+      break;
+    case 50: // TAX
+      switch (addr_mode){
+        case ADM_IMPL: return 0xAA;
+      }
+      break;
+    case 51: // TAY
+      switch (addr_mode){
+        case ADM_IMPL: return 0xA8;
+      }
+      break;
+    case 52: // TSX
+      switch (addr_mode){
+        case ADM_IMPL: return 0xBA;
+      }
+      break;
+    case 53: // TXA
+      switch (addr_mode){
+        case ADM_IMPL: return 0x8A;
+      }
+      break;
+    case 54: // TXS
+      switch (addr_mode){
+        case ADM_IMPL: return 0x9A;
+      }
+      break;
+    case 55: // TYA
+      switch (addr_mode){
+        case ADM_IMPL: return 0x98;
       }
       break;
   }

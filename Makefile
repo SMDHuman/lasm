@@ -24,3 +24,6 @@ example_namespaces: build/lasm examples/namespaces.l
 
 example_fibonacci: build/lasm examples/fibonacci.l
 	./build/lasm examples/fibonacci.l -m 6502 -o build/a.out
+
+example_6502_addressing: build/lasm examples/6502_addressing_modes.l
+	./build/lasm examples/6502_addressing_modes.l -m 6502 -o build/a.out	
