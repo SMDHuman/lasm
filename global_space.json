@@ -13,8 +13,8 @@
       "parent": "__global__",
       "labels": {
         "a": 0,
-        "b": 2,
-        "c": 4
+        "b": 0,
+        "c": 0
       },
       "childs": [
         {
@@ -23,8 +23,8 @@
           "constant": 1,
           "parent": "zp",
           "labels": {
-            "start": 256,
-            "end": 511
+            "start": 0,
+            "end": 0
           },
           "childs": [
 
@@ -38,8 +38,8 @@
       "constant": 0,
       "parent": "__global__",
       "labels": {
-        "start": 16,
-        "LABEL": 19
+        "start": 0,
+        "LABEL": 0
       },
       "childs": [
 

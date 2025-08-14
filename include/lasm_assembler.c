@@ -5,6 +5,7 @@
 #include "lasm_assembler.h"
 #include "lasm_tokenizer.h"
 #include "lasm_namespace.h"
+#include "lasm_parser.h"
 
 //-----------------------------------------------------------------------------
 assembler_t lasm_assembler;
@@ -19,7 +20,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   lasm_assembler.unnamed_namespace_index = 0;
   lasm_assembler.tokens = tokens;
   lasm_assembler.output_file = output;
-  hh_darray_init(&lasm_assembler.backward_patches, sizeof(backward_patch_t));
+  hh_darray_init(&lasm_assembler.backward_patches, sizeof(expression_t));
   //...
   token_t *token = hh_darray_get_reference(tokens, 0);
   while(hh_darray_get_fill(tokens) > 0){
@@ -33,18 +34,16 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             // Handle vector token
             hh_darray_pop(tokens, 0, 0); // Consume label token
             hh_darray_pop(tokens, 0, 0); // Consume open bracket
-            hh_darray_t out_bytes;
-            hh_darray_init(&out_bytes, 1);
-            if(lasm_parse_expression(tokens, &out_bytes, 0, -1) == ERR) return ERR;
-            for(int i = 0; i < hh_darray_get_fill(&out_bytes); i++){
-              uint8_t *byte = hh_darray_get_reference(&out_bytes, i);
-              label->value += (*byte) << (i * 8);
-            }
-            hh_darray_pop(tokens, 0, 0); // Consume close bracket
+            //...
+            //TODO: Implement the evaluation of expressions
+            expression_t expression;
+            if(parser_expression(tokens, &expression) == ERR) return ERR;
+            print_expression_tree(expression.root);printf("\n");
+            //...
+            if(lasm_expect_and_skip(tokens, SBRAC_C) == ERR) return ERR;
             fseek(output, label->value, SEEK_SET);
             label->is_valid = 1;
-            hh_darray_pop(tokens, 0, 0); // Consume colon
-            hh_darray_deinit(&out_bytes);
+            if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
           }
           else{
             // Handle unknown label
@@ -55,11 +54,10 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             label->is_valid = 1;
           }
         }else{
-          hh_darray_t out_bytes;
-          hh_darray_init(&out_bytes, 1);
-          if(lasm_parse_expression(tokens, &out_bytes, 1, -1) == ERR) return ERR;
-          lasm_put_bytes_to_file(&out_bytes, output);
-          hh_darray_deinit(&out_bytes);
+          //TODO: Implement the evaluation of expressions
+          expression_t expression;
+          if(parser_expression(tokens, &expression) == ERR) return ERR;
+          print_expression_tree(expression.root);printf("\n");
         }
       }
       else if(next_token->id == CBRAC_O){
@@ -89,26 +87,22 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       hh_darray_pop(tokens, 0, 0); // Consume curly brace close
     }
     else if(token->id == NUMBER){
-      hh_darray_t out_bytes;
-      hh_darray_init(&out_bytes, 1);
-      if(lasm_parse_expression(tokens, &out_bytes, 1, -1) == ERR) return ERR;
-      lasm_put_bytes_to_file(&out_bytes, output);
-      hh_darray_deinit(&out_bytes);
-      // Handle number token
+      //TODO: Implement the evaluation of expressions
+      expression_t expression;
+      if(parser_expression(tokens, &expression) == ERR) return ERR;
+      print_expression_tree(expression.root);printf("\n");
     }
     else if(token->id == STRING_DB){
-      hh_darray_t out_bytes;
-      hh_darray_init(&out_bytes, 1);
-      if(lasm_parse_expression(tokens, &out_bytes, 1, -1) == ERR) return ERR;
-      lasm_put_bytes_to_file(&out_bytes, output);
-      hh_darray_deinit(&out_bytes);
+      //TODO: Implement the evaluation of expressions
+      expression_t expression;
+      if(parser_expression(tokens, &expression) == ERR) return ERR;
+      print_expression_tree(expression.root);printf("\n");
     }
     else if(token->id == RBRAC_O){
-      hh_darray_t out_bytes;
-      hh_darray_init(&out_bytes, 1);
-      if(lasm_parse_expression(tokens, &out_bytes, 1, -1) == ERR) return ERR;
-      lasm_put_bytes_to_file(&out_bytes, output);
-      hh_darray_deinit(&out_bytes);
+      //TODO: Implement the evaluation of expressions
+      expression_t expression;
+      if(parser_expression(tokens, &expression) == ERR) return ERR;
+      print_expression_tree(expression.root);printf("\n");
     }
     else{
       print_error_loc(token);
@@ -126,27 +120,13 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   }
   // =====================
   // Backwards patches
-  for(uint32_t i = 0; i < hh_darray_get_item_fill(&lasm_assembler.backward_patches); i++){
-    backward_patch_t *patch = hh_darray_get_reference(&lasm_assembler.backward_patches, i);
-    if(patch->label->is_valid){
-      fseek(output, patch->offset, SEEK_SET);
-      uint32_t label_value; fread(&label_value, patch->size, 1, output);
-      if(patch->operation == PLUS) label_value += patch->label->value;
-      else if(patch->operation == MINUS) label_value -= patch->label->value;
-      else{
-        print_error_loc(&patch->label->name);
-        printf("Unsupported patch operation for label '%s'\n", patch->label->name.text);
-        return ERR;
-      }
-      fseek(output, patch->offset, SEEK_SET);
-      fwrite(&label_value, patch->size, 1, output);
-    }else{
-      print_error_loc(&patch->label->name);
-      printf("Label '%s' can't be validated. Unsupported feature.\n", patch->label->name.text);
-      return ERR;
-    }
-  }
+  
   return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t lasm_evaluate_expression(expression_t *expr, hh_darray_t *byte_out){
+  if(expr->root == NULL) return ERR; // No expression to evaluate
+  // Evaluate the expression tree
 }
 
 //-----------------------------------------------------------------------------
@@ -156,168 +136,6 @@ uint32_t get_size_of_file(FILE* file){
   uint32_t size = ftell(file);
   fseek(file, current, SEEK_SET);
   return size;
-}
-//-----------------------------------------------------------------------------
-uint8_t lasm_parse_expression(hh_darray_t *tokens, hh_darray_t *out_bytes, uint8_t stash_bwp, uint32_t max_size){
-  token_t *token = hh_darray_get_reference(tokens, 0);
-  uint32_t number = 0;
-  uint32_t size = 0;
-  while(hh_darray_get_fill(tokens) > 0){
-    if(token->id == NUMBER){
-      // Handle number token
-      if(lasm_eval_token(token, (uint32_t*)&number, &size, PLUS, stash_bwp, max_size) == ERR) return ERR;
-      hh_darray_pop(tokens, 0, 0);
-      if(lasm_check_indexing(tokens, &number) == ERR) return ERR;
-      if(size > 0){
-        number = number & ((1 << (size * 8)) - 1);
-      }
-    }
-    else if(token->id == WORD){
-      // Handle word token
-      if(lasm_eval_token(token, (uint32_t*)&number, &size, PLUS, stash_bwp, max_size) == ERR) return ERR;
-      hh_darray_pop(tokens, 0, 0);
-      if(lasm_check_indexing(tokens, &number) == ERR) return ERR;
-      if(size > 0){
-        number = number & ((1 << (size * 8)) - 1);
-      }
-    }
-    if(token->id == STRING_DB){
-      for(uint32_t i = 0; i < strlen(token->text); i++){
-        hh_darray_append(out_bytes, &token->text[i]);
-      }
-      hh_darray_pop(tokens, 0, 0); // Consume String
-    }
-    else if(token->id == PLUS){
-      hh_darray_pop(tokens, 0, 0); // Consume plus token
-      uint32_t right_number;
-      if(lasm_eval_token(token, &right_number, &size, PLUS, stash_bwp, max_size) == ERR) return ERR;
-      hh_darray_pop(tokens, 0, 0); // Consume right operand
-      if(lasm_check_indexing(tokens, &number) == ERR) return ERR;
-      number = (uint32_t)number + right_number;
-      if(size > 0){
-        number = number & ((1 << (size * 8)) - 1);
-      }
-    }
-    else if(token->id == MINUS){
-      hh_darray_pop(tokens, 0, 0); // Consume plus token
-      uint32_t right_number;
-      if(lasm_eval_token(token, &right_number, &size, MINUS, stash_bwp, max_size) == ERR) return ERR;
-      hh_darray_pop(tokens, 0, 0); // Consume right operand
-      if(lasm_check_indexing(tokens, &number) == ERR) return ERR;
-      number = (uint32_t)number - right_number;
-      if(size > 0){
-        number = number & ((1 << (size * 8)) - 1);
-      }
-    }
-    else if(token->id == DOT){
-      hh_darray_pop(tokens, 0, 0); // Consume dot
-      if(token->id == SBRAC_O){
-        hh_darray_pop(tokens, 0, 0); // Consume left bracket
-        hh_darray_t size_value; hh_darray_init(&size_value, 1);
-        if(lasm_parse_expression(tokens, &size_value, 0, -1) == ERR) return ERR;
-        for(uint8_t i = 0; i < hh_darray_get_fill(&size_value); i++){
-          uint8_t *byte = hh_darray_get_reference(&size_value, i);
-          size += (*byte) << (i * 8);
-        }
-        size = size > max_size ? max_size : size;
-        if(token->id != SBRAC_C){
-          print_error_loc(token);
-          printf("Expected a right bracket '}' but got '%s'\n", token->text);
-          return ERR;
-        }
-        hh_darray_pop(tokens, 0, 0); // Consume right bracket
-        hh_darray_deinit(&size_value);
-      }
-    }
-    else{
-      break;
-      //print_error_loc(token);
-      //printf("Unexpected token while parsing expression: '%s'\n", token->text);
-      //return ERR;
-    }
-  }
-  if(number == 0 && size == 0){
-    hh_darray_append(out_bytes, 0);
-  }
-  while(number > 0){
-    hh_darray_append(out_bytes, &number);
-    number = number >> 8;
-    if(size > 0) size--;
-  }
-  while(size > 0){
-    hh_darray_append(out_bytes, 0);
-    size--;
-  }
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
-uint8_t lasm_check_indexing(hh_darray_t* tokens, uint32_t* number){
-  // byte indexing "exp[exp]"
-  token_t* token = hh_darray_get_reference(tokens, 0);
-  if(token->id == SBRAC_O){
-    hh_darray_pop(tokens, 0, 0); // Consume '['
-    hh_darray_t index_value; hh_darray_init(&index_value, 1);
-    if(lasm_parse_expression(tokens, &index_value, 0, -1) == ERR) return ERR;
-    if(token->id != SBRAC_C){
-      print_error_loc(token);
-      printf("Expected a right bracket ']' but got '%s'\n", token->text);
-      return ERR;
-    }
-    hh_darray_pop(tokens, 0, 0); // Consume ']'
-    uint32_t index;
-    for(uint8_t i = 0; i < hh_darray_get_fill(&index_value); i++){
-      uint8_t* byte = hh_darray_get_reference(&index_value, i);
-      index += (*byte) << (i * 8);
-    }
-    (*number) = (*number >> index) & 0xFF;
-  }
-}
-//-----------------------------------------------------------------------------
-uint8_t lasm_eval_token(token_t *token, uint32_t *out_number, uint32_t *size, TOKEN_ID operation, uint8_t stash_bwp, uint32_t max_size){
-  if(token->id == NUMBER){
-    // Handle number token
-    uint32_t number;
-    if(lasm_token_to_number(token, &number) == ERR) return ERR;
-    (*out_number) = number;
-    return 0;
-  }
-  else if(token->id == WORD){
-    // Handle word token
-    label_t *label = lasm_find_label_in_namespace(lasm_assembler.current_namespace, token->text);
-    if(label != NULL){
-      if(!label->is_vector){
-        (*size) = DEFAULT_ADDRESSING_SIZE < max_size ? DEFAULT_ADDRESSING_SIZE : max_size;
-      }
-      if(label->is_valid){
-        // Handle vector token
-        (*out_number) = label->value;
-        return 0;
-      }
-      else{
-        if(stash_bwp){
-          backward_patch_t patch = {0};
-          patch.size = DEFAULT_ADDRESSING_SIZE < max_size ? DEFAULT_ADDRESSING_SIZE : max_size;
-          patch.offset = ftell(lasm_assembler.output_file);
-          patch.operation = operation;
-          patch.label = label;
-          hh_darray_append(&lasm_assembler.backward_patches, &patch);
-          (*out_number) = 0;
-          (*size) = DEFAULT_ADDRESSING_SIZE < max_size ? DEFAULT_ADDRESSING_SIZE : max_size;
-          return 0;
-        }else{
-          print_error_loc(token);
-          printf("Label '%s' must be a vector address.\n", token->text);
-          return ERR;
-        }
-      }
-    }
-  }
-  else{
-    print_error_loc(token);
-    printf("Unexpected token while evaluating expression: %s\n", token->text);
-    return ERR;
-  }
 }
 //----------------------------------------------------------------------------
 uint8_t lasm_put_number_to_file(uint32_t number, FILE *output){
@@ -355,4 +173,27 @@ uint8_t lasm_token_to_number(token_t *token, uint32_t *number){
   }
   return 0;    
 }
-
+//-----------------------------------------------------------------------------
+uint8_t lasm_expect(hh_darray_t *tokens, TOKEN_ID expected){
+  if(hh_darray_get_fill(tokens) == 0) return ERR;
+  token_t *token = hh_darray_get_reference(tokens, 0);
+  if(token->id != expected){
+    print_error_loc(token);
+    printf("Expected token '%s' but got '%s'\n", token_id_to_string(expected), token->text);
+    return ERR;
+  }
+  hh_darray_pop(tokens, 0, 0);
+  return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t lasm_expect_and_skip(hh_darray_t *tokens, TOKEN_ID expected){
+  if(hh_darray_get_fill(tokens) == 0) return ERR;
+  token_t *token = hh_darray_get_reference(tokens, 0);
+  if(token->id != expected){
+    print_error_loc(token);
+    printf("Expected token '%s' but got '%s'\n", token_id_to_string(expected), token->text);
+    return ERR;
+  }
+  hh_darray_pop(tokens, 0, 0);
+  return 0;
+}

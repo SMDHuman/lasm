@@ -3,6 +3,7 @@
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
 #include "lasm_parser.h"
+#include "lasm_assembler.h"
 
 static int32_t tokens_precedence(token_t *token);
 static int32_t sbrac_count = 0;
@@ -15,6 +16,14 @@ uint8_t parser_expression(hh_darray_t *tokens, expression_t *expr){
   while(hh_darray_get_item_fill(tokens) > 0){
     //Check if it can continue parsing, else break
     token_t *token = hh_darray_get_reference(tokens, 0);
+    if(token->id == SBRAC_C) {
+      if(sbrac_count == 0) {
+        break;
+      }else {
+        sbrac_count--;
+        hh_darray_pop(tokens, 0, 0);
+      }
+    }
     if(token->id == NEWLINE){
       if(sbrac_count!=0){
         print_error_loc(token);
@@ -51,7 +60,6 @@ uint8_t parser_expression_right(hh_darray_t *tokens, int32_t precedence, hh_darr
   token_t* token = hh_darray_get_reference(tokens, 0);
   expression_tree_t *value_node;
   expression_tree_t *op_node;
-  printf("Token: %s\n", token->text);
   if(token->id == RBRAC_O) {
     rbrac_count++;
     hh_darray_pop(tokens, 0, 0);
@@ -64,26 +72,38 @@ uint8_t parser_expression_right(hh_darray_t *tokens, int32_t precedence, hh_darr
     value_node->right = NULL; // No right child for simple tokens
     memcpy(&value_node->token, token, sizeof(token_t));
     hh_darray_pop(tokens, 0, &value_node->token); // Consume the token
+    (*expr_tree_out) = value_node;
   }else{
     print_error_loc(token);
     printf("Unknown token for parsing\n");
     return ERR;
   }
   //...
-  if(token->id == RBRAC_C) {
+  if(token->id == DOT) {
+    token_t *next_token = hh_darray_get_reference(tokens, 1);
+    if(next_token->id != SBRAC_O){
+      print_error_loc(next_token);
+      printf("Expected '[' after '.' but got '%s'\n", next_token->text);
+      return ERR;
+    }
+    hh_darray_pop(tokens, 1, 0); // Consume '['
+    sbrac_count++;
+  }
+  else if(token->id == RBRAC_C) {
     rbrac_count--;
     hh_darray_pop(tokens, 0, 0);
   }
-  if(token->id == SBRAC_C) {
+  else if(token->id == SBRAC_C) {
+    if(sbrac_count == 0) {
+      return 0;
+    }
     sbrac_count--;
     hh_darray_pop(tokens, 0, 0);
   }
   uint32_t my_precedence = tokens_precedence(token) + (sbrac_count ? 5 : 0)+ (rbrac_count ? 4 : 0);
   if(token->id == SBRAC_O) sbrac_count++;
   //...
-  if(my_precedence < precedence){
-    (*expr_tree_out) = value_node;
-  }else{
+  if(my_precedence >= precedence){
     hh_darray_append(expression_tree_buffer, 0); // create new node
     op_node = hh_darray_get_end_reference(expression_tree_buffer);
     op_node->left = value_node;
@@ -100,16 +120,17 @@ uint8_t parser_expression_right(hh_darray_t *tokens, int32_t precedence, hh_darr
 int32_t tokens_precedence(token_t *token){
   if(token->id == PLUS || token->id == MINUS) return 2;
   if(token->id == ASTERISK || token->id == SLASH) return 3;
-  if(token->id == SBRAC_O) return 4; // Parentheses have the highest precedence
+  if(token->id == SBRAC_O) return 4; 
+  if(token->id == DOT) return 4; 
   return 0; // Default precedence for other tokens
 }
 
 //-----------------------------------------------------------------------------
 void print_expression_tree(expression_tree_t *root){
   if(root == NULL) return;
-  printf("(");
+  if(root->left != NULL || root->right != NULL) printf("(");
   print_expression_tree(root->left);
   printf(" %s ", root->token.text);
   print_expression_tree(root->right);
-  printf(")");
+  if(root->left != NULL || root->right != NULL) printf(")");
 }

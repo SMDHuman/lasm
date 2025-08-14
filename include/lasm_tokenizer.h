@@ -65,6 +65,7 @@ uint8_t is_alpha(char c);
 uint8_t is_inside(char c, const char* chars);
 void print_error_loc(token_t *token);
 void print_tokens_as_code(hh_darray_t* tokens);
+const char* token_id_to_string(TOKEN_ID id);
 
 //-----------------------------------------------------------------------------
 #ifdef LASM_TOKENIZER_IMPLEMENTATION
@@ -298,7 +299,27 @@ void print_tokens_as_code(hh_darray_t* tokens){
 		else printf("%s ", token.text);
 	}		
 }
-
+const char* token_id_to_string(TOKEN_ID id){
+	switch(id){
+		case WORD: return "WORD";
+		case NUMBER: return "NUMBER";
+		case STRING_DB: return "STRING_DB";
+		case STRING_SG: return "STRING_SG";
+		case VECTOR: return "VECTOR";
+		case SIZE: return "SIZE";
+		case NEWLINE: return "NEWLINE";
+		case COLON: return "COLON";
+		case CBRAC_O: return "CBRAC_O";
+		case CBRAC_C: return "CBRAC_C";
+		case RBRAC_O: return "RBRAC_O";
+		case RBRAC_C: return "RBRAC_C";
+		case PLUS: return "PLUS";
+		case MINUS: return "MINUS";
+		case ASTERISK: return "ASTERISK";
+		case SLASH: return "SLASH";
+		default: return "UNKNOWN";
+	}
+}
 
 #endif
 #endif

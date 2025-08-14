@@ -14,9 +14,10 @@ start[16+zp.a]:
 LABEL+65536
 start - 0xa
 LABEL:
-0b11.[10]
+0b11.[10[2]] + 2
 start
 zp.c
+"Hello"+3
 zp.stack.end
 LABEL 
 }

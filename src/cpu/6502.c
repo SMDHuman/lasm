@@ -196,7 +196,7 @@ uint8_t lasm_6502_assemble(void){
   // Handle argument values
   hh_darray_t value_bytes; hh_darray_init(&value_bytes, 1);
   if(addr_mode & (ADM_ZPG|ADM_ABS)){
-    if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
+    //if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
     if(hh_darray_get_fill(&value_bytes) == 1){
       if(token->id == COMMA){
         hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
@@ -234,7 +234,7 @@ uint8_t lasm_6502_assemble(void){
     }
   }
   else if(addr_mode == ADM_IMM){
-    if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
+    //if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
     // Ensure only the least significant byte is used
     while(hh_darray_get_fill(&value_bytes) > 1){
       hh_darray_popend(&value_bytes, 0);
@@ -252,7 +252,7 @@ uint8_t lasm_6502_assemble(void){
     hh_darray_push(lasm_assembler.tokens, 1, &op_token);
     ///...
     fseek(lasm_assembler.output_file, 1, SEEK_CUR);
-    if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, 1) == ERR) return ERR;
+    //if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, 1) == ERR) return ERR;
     fseek(lasm_assembler.output_file, -1, SEEK_CUR);
     // Ensure only the least significant byte is used
     while(hh_darray_get_fill(&value_bytes) > 1){
@@ -260,7 +260,7 @@ uint8_t lasm_6502_assemble(void){
     }
   }
   else if(addr_mode == ADM_IND){
-    if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
+    //if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
     if (token->id == RBRAC_C){
       hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
       if(token->id == COMMA){

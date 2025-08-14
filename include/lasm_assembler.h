@@ -33,11 +33,10 @@ extern assembler_t lasm_assembler;
 
 // Function to assemble the code
 uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output);
-uint8_t lasm_parse_expression(hh_darray_t *tokens, hh_darray_t *out_bytes, uint8_t stash_bwp, uint32_t max_size);
 uint8_t lasm_token_to_number(token_t *token, uint32_t *number);
 uint8_t lasm_put_bytes_to_file(hh_darray_t* bytes, FILE *output);
 uint8_t lasm_put_number_to_file(uint32_t number, FILE *output);
-uint8_t lasm_eval_token(token_t *token, uint32_t *out_number, uint32_t *size, TOKEN_ID operation, uint8_t stash_bwp, uint32_t max_size);
-uint8_t lasm_check_indexing(hh_darray_t* tokens, uint32_t* number);
+uint8_t lasm_expect_and_skip(hh_darray_t *tokens, TOKEN_ID expected);
+uint8_t lasm_expect(hh_darray_t *tokens, TOKEN_ID expected);
 
 #endif // LASM_ASSEMBLER_H

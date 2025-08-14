@@ -7,6 +7,8 @@
 #include "lasm_tokenizer.h"
 #define LASM_MACRO_IMPLEMENTATION
 #include "lasm_macro.h"
+#define HH_BIGINT_IMPLEMENTATION
+#include "hh_bigint.h"
 #include "lasm_namespace.h"
 #include "lasm_assembler.h"
 #include "lasm_parser.h"
