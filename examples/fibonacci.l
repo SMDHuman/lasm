@@ -25,7 +25,7 @@ lda #1; sta zp.a
   bcc loop
   clc; bcc HALT
 }
-
+0.[16]
 
 HALT:
   clc; bcc HALT

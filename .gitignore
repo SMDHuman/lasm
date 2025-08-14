@@ -54,3 +54,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Project spesific files
+global_space.json

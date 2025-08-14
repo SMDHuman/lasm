@@ -170,14 +170,11 @@ uint8_t lasm_6502_assemble(void){
     hh_darray_get(lasm_assembler.tokens, 0, &val_token);
     hh_darray_get(lasm_assembler.tokens, 0, &op_token);
     val_token.id = NUMBER;
-    sprintf(val_token.text, "%ld", ftell(lasm_assembler.output_file)+1);
-    op_token.id = PLUS;
-    sprintf(op_token.text, "%c", '+');
-    hh_darray_push(lasm_assembler.tokens, 0, &op_token);
-    hh_darray_push(lasm_assembler.tokens, 0, &val_token);
+    sprintf(val_token.text, "%ld", ftell(lasm_assembler.output_file)+2);
     op_token.id = MINUS;
     sprintf(op_token.text, "%c", '-');
-    hh_darray_push(lasm_assembler.tokens, 0, &op_token);
+    hh_darray_push(lasm_assembler.tokens, 1, &val_token);
+    hh_darray_push(lasm_assembler.tokens, 1, &op_token);
     ///...
     fseek(lasm_assembler.output_file, 1, SEEK_CUR);
     if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, 1) == ERR) return ERR;

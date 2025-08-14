@@ -118,12 +118,9 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   // Backwards patches
   for(uint32_t i = 0; i < hh_darray_get_item_fill(&lasm_assembler.backward_patches); i++){
     backward_patch_t *patch = hh_darray_get_reference(&lasm_assembler.backward_patches, i);
-    printf("Applying patch at offset %u for label '%s'\n", patch->offset, patch->label->name.text);
-    printf("Label value: %u\n", patch->label->value);
     if(patch->label->is_valid){
       fseek(output, patch->offset, SEEK_SET);
       uint32_t label_value; fread(&label_value, patch->size, 1, output);
-      printf("Current label value: %u\n", label_value);
       if(patch->operation == PLUS) label_value += patch->label->value;
       else if(patch->operation == MINUS) label_value -= patch->label->value;
       else{
@@ -268,7 +265,7 @@ uint8_t lasm_eval_token(token_t *token, uint32_t *out_number, uint32_t *size, TO
       else{
         if(stash_bwp){
           backward_patch_t patch = {0};
-          patch.size = DEFAULT_ADDRESSING_SIZE;
+          patch.size = DEFAULT_ADDRESSING_SIZE < max_size ? DEFAULT_ADDRESSING_SIZE : max_size;
           patch.offset = ftell(lasm_assembler.output_file);
           patch.operation = operation;
           patch.label = label;
