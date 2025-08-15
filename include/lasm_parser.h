@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// lasm_parser.h 14.08.2025
+// lasm_parser.h is part of the LASM (LOTP Assembler) project.
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
 #ifndef LASM_PARSER_H
@@ -18,6 +18,7 @@ typedef struct{
   uint8_t size; // Size of the expression in bytes
   uint32_t offset; // Offset in the output file
   expression_tree_t *root; // Tokens that make up the expression
+  int32_t last_low_precedence;
   hh_darray_t expression_tree_buffer; // Buffer for expression tree nodes
 } expression_t;
 

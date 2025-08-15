@@ -19,7 +19,6 @@ typedef enum{
 	WORD,
 	NUMBER,	
 	VECTOR,
-	SIZE,
 	STRING_DB,
 	STRING_SG,
 	RBRAC_O,
@@ -180,13 +179,6 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 			token.line=line;
 			token.col=col-strlen(word);
 			memcpy(token.text, word, MAX_TOKEN_SIZE);
-			{
-				token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
-				if(t1.id == DOT){
-					hh_darray_popend(tokens, 0);
-					token.id = SIZE;
-				}
-			}
 			hh_darray_append(tokens, &token);
 			fseek(file, -1, SEEK_CUR);
 		}
@@ -284,6 +276,9 @@ char char_lower(char c){
 }
 //-----------------------------------------------------------------------------
 void print_error_loc(token_t *token){
+	// Print the offending token
+	//printf("[DEBUG] Offending token: '%s'\n", token->text);
+	//printf("[DEBUG] ID: %s\n", token_id_to_string(token->id));
 	printf("[ERROR] '%s':%d:%d: ", token->filename, token->line, token->col);
 }
 void print_tokens_as_code(hh_darray_t* tokens){
@@ -296,7 +291,6 @@ void print_tokens_as_code(hh_darray_t* tokens){
 		else if(token.id == STRING_DB) printf("\"%s\"", token.text);
 		else if(token.id == STRING_SG) printf("'%s'", token.text);
 		else if(token.id == VECTOR) printf("[%s]", token.text);
-		else if(token.id == SIZE) printf(".%s", token.text);
 		else printf("%s ", token.text);
 	}		
 }
@@ -306,7 +300,6 @@ const char* token_id_to_string(TOKEN_ID id){
 		case WORD: return "WORD";
 		case NUMBER: return "NUMBER";
 		case VECTOR: return "VECTOR";
-		case SIZE: return "SIZE";
 		case STRING_DB: return "STRING_DB";
 		case STRING_SG: return "STRING_SG";
 		case RBRAC_O: return "RBRAC_O";
