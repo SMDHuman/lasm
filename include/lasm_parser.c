@@ -92,15 +92,6 @@ expression_tree_t* parser_expression_right(hh_darray_t *tokens, expression_t *ex
   if(token->id == RBRAC_C || token->id == SBRAC_C){
     return expr_tree_out; // Return the expression tree
   }
-  // Check for filling dot
-  if(token->id == DOT){
-    token_t *next = hh_darray_get_reference(tokens, 1);
-    if(next->id != SBRAC_O){
-      print_error_loc(next);
-      printf("Expected '[' after '.'\n");
-      return NULL;
-    }
-  }
   // Look for the precedence value of next token
   uint32_t my_precedence = tokens_precedence(token) ;
   // Compare with the current precedence
