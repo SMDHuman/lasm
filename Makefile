@@ -1,14 +1,17 @@
-build/lasm: build src/lasm.c include/* src/cpu/*  build/lasm_namespace.o build/lasm_assembler.o build/lasm_parser.o
-	gcc src/lasm.c build/lasm_namespace.o build/lasm_assembler.o build/lasm_parser.o -o build/lasm -I include -I src/cpu 
+INCLUDE := -I include/ -I src/cpu/
+OBJECTS := build/lasm_namespace.o build/lasm_assembler.o build/lasm_parser.o
 
-build/lasm_namespace.o: include/lasm_namespace.c
-	gcc -c include/lasm_namespace.c -o build/lasm_namespace.o -I include -I src/cpu
+build/lasm: build src/lasm.c include/* src/cpu/*  $(OBJECTS)
+	gcc -o build/lasm $(INCLUDE) $(OBJECTS) src/lasm.c 
 
-build/lasm_assembler.o: include/lasm_assembler.c
-	gcc -c include/lasm_assembler.c -o build/lasm_assembler.o -I include -I src/cpu
+build/lasm_namespace.o: include/lasm_namespace.*
+	gcc -c include/lasm_namespace.c -o build/lasm_namespace.o $(INCLUDE)
 
-build/lasm_parser.o: include/lasm_parser.c
-	gcc -c include/lasm_parser.c -o build/lasm_parser.o -I include -I src/cpu
+build/lasm_assembler.o: include/lasm_assembler.*
+	gcc -c include/lasm_assembler.c -o build/lasm_assembler.o $(INCLUDE)
+
+build/lasm_parser.o: include/lasm_parser.*
+	gcc -c include/lasm_parser.c -o build/lasm_parser.o $(INCLUDE)
 
 build:
 	mkdir build

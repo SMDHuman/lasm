@@ -22,7 +22,8 @@ typedef struct{
 } expression_t;
 
 uint8_t parser_expression(hh_darray_t *tokens, expression_t *expr);
-uint8_t parser_expression_right(hh_darray_t *tokens, int32_t precedence, hh_darray_t *expression_tree_buffer, expression_tree_t **expr_tree_out);
+// If return 0, had an error
+expression_tree_t* parser_expression_right(hh_darray_t *tokens, expression_t *expr, int32_t precedence);
 void print_expression_tree(expression_tree_t *root);
 
 #endif // LASM_PARSER_H
