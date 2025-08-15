@@ -14,7 +14,8 @@ start[16+zp.a]:
 LABEL+65536
 start - 0xa
 LABEL:
-0b11.[10[2]] + 2
+1 + (3 + 3) * 2
+0b11.[10[3*(2-1)]] + 2
 start
 zp.c
 "Hello"+3

@@ -46,6 +46,7 @@ typedef enum{
 	EXCLA,
 	DOT,
 	COMMA,
+	INDEX,
 }TOKEN_ID;
 
 typedef struct{
@@ -301,22 +302,38 @@ void print_tokens_as_code(hh_darray_t* tokens){
 }
 const char* token_id_to_string(TOKEN_ID id){
 	switch(id){
+		case NONE: return "NONE";
 		case WORD: return "WORD";
 		case NUMBER: return "NUMBER";
-		case STRING_DB: return "STRING_DB";
-		case STRING_SG: return "STRING_SG";
 		case VECTOR: return "VECTOR";
 		case SIZE: return "SIZE";
-		case NEWLINE: return "NEWLINE";
-		case COLON: return "COLON";
-		case CBRAC_O: return "CBRAC_O";
-		case CBRAC_C: return "CBRAC_C";
+		case STRING_DB: return "STRING_DB";
+		case STRING_SG: return "STRING_SG";
 		case RBRAC_O: return "RBRAC_O";
 		case RBRAC_C: return "RBRAC_C";
+		case CBRAC_O: return "CBRAC_O";
+		case CBRAC_C: return "CBRAC_C";
+		case SBRAC_O: return "SBRAC_O";
+		case SBRAC_C: return "SBRAC_C";
+		case MACRO_O: return "MACRO_O";
+		case MACRO_C: return "MACRO_C";
+		case MACRO_ARG: return "MACRO_ARG";
+		case MACRO_INCLUDE: return "MACRO_INCLUDE";
+		case NEWLINE: return "NEWLINE";
+		case HASH: return "HASH";
+		case COLON: return "COLON";
 		case PLUS: return "PLUS";
 		case MINUS: return "MINUS";
-		case ASTERISK: return "ASTERISK";
 		case SLASH: return "SLASH";
+		case BITSHIFT_L: return "BITSHIFT_L";
+		case BITSHIFT_R: return "BITSHIFT_R";
+		case BSLASH: return "BSLASH";
+		case ASTERISK: return "ASTERISK";
+		case QUEST: return "QUEST";
+		case EXCLA: return "EXCLA";
+		case DOT: return "DOT";
+		case COMMA: return "COMMA";
+		case INDEX: return "INDEX";
 		default: return "UNKNOWN";
 	}
 }
