@@ -1,17 +1,18 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+
 #define HH_DARRAY_IMPLEMENTATION
 #include "hh_darray.h"
-#define LASM_TOKENIZER_IMPLEMENTATION
-#include "lasm_tokenizer.h"
-#define LASM_MACRO_IMPLEMENTATION
-#include "lasm_macro.h"
 #define HH_BIGINT_IMPLEMENTATION
 #include "hh_bigint.h"
+
+#include "lasm_tokenizer.h"
+#include "lasm_macro.h"
 #include "lasm_namespace.h"
 #include "lasm_assembler.h"
 #include "lasm_parser.h"
+
 #include "cpu/6502.c"
 
 //-----------------------------------------------------------------------------
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]){
   }
   //print_tokens_as_code(&tokens);
 
-  FILE *json_f = fopen("global_space.json", "w");
+  FILE *json_f = fopen("build/global_space.json", "w");
   lasm_namespace_to_json(&global_space, json_f, 0);
   fclose(json_f);
 
@@ -79,7 +80,7 @@ int main(int argc, char *argv[]){
   fclose(output);
 
 
-  json_f = fopen("global_space.json", "w");
+  json_f = fopen("build/global_space.json", "w");
   lasm_namespace_to_json(&global_space, json_f, 0);
   fclose(json_f);
   

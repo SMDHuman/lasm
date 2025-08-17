@@ -1,35 +1,40 @@
+# Compiler and flags
+CC := cc
 INCLUDE := -I include/ -I src/cpu/
-OBJECTS := build/lasm_namespace.o build/lasm_assembler.o build/lasm_parser.o
 
-build/lasm: build src/lasm.c include/* src/cpu/*  $(OBJECTS)
-	gcc -o build/lasm $(INCLUDE) $(OBJECTS) src/lasm.c 
+# Source directories
+SRC_DIR := src
+INCLUDE_DIR := include
+CPU_DIR := src/cpu
+BUILD_DIR := build
 
-build/lasm_namespace.o: include/lasm_namespace.*
-	gcc -c include/lasm_namespace.c -o build/lasm_namespace.o $(INCLUDE)
+# Object files
+OBJECTS := $(BUILD_DIR)/lasm_namespace.o \
+			 $(BUILD_DIR)/lasm_assembler.o \
+			 $(BUILD_DIR)/lasm_parser.o \
+			 $(BUILD_DIR)/lasm_macro.o \
+			 $(BUILD_DIR)/lasm_tokenizer.o
 
-build/lasm_assembler.o: include/lasm_assembler.*
-	gcc -c include/lasm_assembler.c -o build/lasm_assembler.o $(INCLUDE)
+# Main target
+$(BUILD_DIR)/lasm: $(BUILD_DIR) $(SRC_DIR)/lasm.c $(wildcard $(INCLUDE_DIR)/*) $(wildcard $(CPU_DIR)/*) $(OBJECTS)
+	$(CC) -o $@ $(INCLUDE) $(OBJECTS) $(SRC_DIR)/lasm.c
 
-build/lasm_parser.o: include/lasm_parser.*
-	gcc -c include/lasm_parser.c -o build/lasm_parser.o $(INCLUDE)
+# Generic rule for object files
+$(BUILD_DIR)/%.o: $(INCLUDE_DIR)/%.c $(INCLUDE_DIR)/%.h
+	$(CC) -c $< -o $@ $(INCLUDE)
 
-build:
-	mkdir build
+# Create build directory
+$(BUILD_DIR):
+	mkdir -p $@
 
-clear:
-	rm -r build
+# Phony targets
+.PHONY: clean examples
 
-example_basics: build/lasm examples/basic_syntax.l
-	./build/lasm examples/basic_syntax.l -m 6502 -o build/a.out
+clean:
+	rm -rf $(BUILD_DIR)
 
-example_expressions: build/lasm examples/expressions.l
-	./build/lasm examples/expressions.l -m 6502 -o build/a.out
+# Examples
+examples: example_basics example_expressions example_namespaces example_fibonacci example_6502_addressing
 
-example_namespaces: build/lasm examples/namespaces.l
-	./build/lasm examples/namespaces.l -m 6502 -o build/a.out
-
-example_fibonacci: build/lasm examples/fibonacci.l
-	./build/lasm examples/fibonacci.l -m 6502 -o build/a.out
-
-example_6502_addressing: build/lasm examples/6502_addressing_modes.l
-	./build/lasm examples/6502_addressing_modes.l -m 6502 -o build/a.out	
+example_%: $(BUILD_DIR)/lasm examples/%.l
+	./$(BUILD_DIR)/lasm examples/$*.l -m 6502 -o $(BUILD_DIR)/$*.out
