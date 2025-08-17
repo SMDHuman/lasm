@@ -119,7 +119,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		// Parse words
 		if(is_alpha(cr) || cr == '_'){
 			memset(word, 0, MAX_TOKEN_SIZE);
-			while(is_alpha(cr) || cr == '_' || cr == '.'){
+			while(is_alphanum(cr) || cr == '_' || cr == '.'){
 				strcat(word, &cr);
 				cr = fgetc(file);
 				col++;
@@ -189,6 +189,12 @@ uint8_t is_lineend_token_text(hh_darray_t *tokens, uint32_t index, const char* t
 uint8_t is_alpha(char c){
 	if(((uint8_t)c <= 90 && (uint8_t)c >= 65) || 
 	((uint8_t)c <= 122 && (uint8_t)c >= 97)) return 1;
+	return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t is_alphanum(char c){
+	if(((uint8_t)c <= 90 && (uint8_t)c >= 65) || 
+	((uint8_t)c <= 122 && (uint8_t)c >= 97) || ((uint8_t)c <= 57 && (uint8_t)c >= 48)) return 1;
 	return 0;
 }
 //-----------------------------------------------------------------------------

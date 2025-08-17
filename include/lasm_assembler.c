@@ -6,11 +6,13 @@
 #include "lasm_tokenizer.h"
 #include "lasm_namespace.h"
 #include "lasm_parser.h"
+#include "hh_bigint.h"
 
 //-----------------------------------------------------------------------------
 assembler_t lasm_assembler;
 
 static uint32_t get_size_of_file(FILE* file);
+const char TAG[] = "[ASMB]";
 
 //-----------------------------------------------------------------------------
 // Function to assemble the code
@@ -104,7 +106,31 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       if(parser_expression(tokens, &expression) == ERR) return ERR;
       print_expression_tree(expression.root);printf("\n");
     }
+    // Vector with no name
+    else if(token->id == SBRAC_O){
+      if(is_lineend_token_id(tokens, 0, COLON)){
+        // Handle vector token
+        hh_darray_pop(tokens, 0, 0); // Consume open bracket
+        //...
+        //TODO: Implement the evaluation of expressions
+        expression_t expression;
+        if(parser_expression(tokens, &expression) == ERR) return ERR;
+        print_expression_tree(expression.root);printf("\n");
+        // Evaluate expression
+        uint32_t value;// = lasm_evaluate_expression(&expression, output);
+        //...
+        if(lasm_expect_and_skip(tokens, SBRAC_C) == ERR) return ERR;
+        fseek(output, value, SEEK_SET);
+        if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
+      }else{
+        printf(TAG);
+        print_error_loc(token);
+        printf("Vector must be ending with ':'\n");
+        return ERR;
+      }
+    }
     else{
+      printf(TAG);
       print_error_loc(token);
       printf("Unexpected token: %s\n", token->text);
       return ERR;
@@ -113,6 +139,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
     if(token->id == NEWLINE){
       hh_darray_pop(tokens, 0, 0);
     }else {
+      printf(TAG);
       print_error_loc(token);
       printf("Expected newline but got '%s'\n", token->text);
       return ERR;
@@ -124,7 +151,8 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   return 0;
 }
 //-----------------------------------------------------------------------------
-uint8_t lasm_evaluate_expression(expression_t *expr, hh_darray_t *byte_out){
+// Evaluate the expression. Return ERR if there is invalid branch 
+uint8_t lasm_evaluate_expression(expression_t *expr, hh_bigint_t *number){
   if(expr->root == NULL) return ERR; // No expression to evaluate
   // Evaluate the expression tree
 }
@@ -167,6 +195,7 @@ uint8_t lasm_token_to_number(token_t *token, uint32_t *number){
         // Else expect decimal
         *number = strtol(token->text, NULL, 10);
   }else{
+      printf(TAG);
       print_error_loc(token);
       printf("Expected number but got '%s'\n", token->text);
       return(ERR);
@@ -178,6 +207,7 @@ uint8_t lasm_expect(hh_darray_t *tokens, TOKEN_ID expected){
   if(hh_darray_get_fill(tokens) == 0) return ERR;
   token_t *token = hh_darray_get_reference(tokens, 0);
   if(token->id != expected){
+    printf(TAG);
     print_error_loc(token);
     printf("Expected token '%s' but got '%s'\n", token_id_to_string(expected), token->text);
     return ERR;
@@ -190,6 +220,7 @@ uint8_t lasm_expect_and_skip(hh_darray_t *tokens, TOKEN_ID expected){
   if(hh_darray_get_fill(tokens) == 0) return ERR;
   token_t *token = hh_darray_get_reference(tokens, 0);
   if(token->id != expected){
+    printf(TAG);
     print_error_loc(token);
     printf("Expected token '%s' but got '%s'\n", token_id_to_string(expected), token->text);
     return ERR;

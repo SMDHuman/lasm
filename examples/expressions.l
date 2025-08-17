@@ -9,6 +9,8 @@ zp{
   }
 }
 
+macro_with_args 123+2, 412
+
 {
 start[16+zp.a]:
 LABEL+65536
@@ -21,7 +23,21 @@ zp.c
 "Hello"+3
 zp.stack.end
 LABEL 
+macro
 }
+
+<macro
+2*3.[5]
+0x21 - 3 + 2
+>
+
+<macro_with_args <arg1> <arg2>
+<arg1>
+<arg2>
+<arg1>
+macro
+>
+
 
 
 // If uncommet this line, it will give an error

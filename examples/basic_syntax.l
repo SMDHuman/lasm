@@ -21,10 +21,10 @@ asd
 
 0xffff
 
-//stack{
-//	[zp.end + 1]:
-//	0 .[256] //blank space 
-//}
+stack{
+	[zp.end + 1]: // vector with no name
+	0 .[256] //blank space 
+}
 
 start[0x8000]:  // declare bracnh label and set assembler counter
 

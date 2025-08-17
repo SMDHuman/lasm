@@ -63,6 +63,7 @@ uint8_t is_lineend_token_text(hh_darray_t *tokens, uint32_t index, const char* t
 char char_upper(char c);
 char char_lower(char c);
 uint8_t is_alpha(char c);
+uint8_t is_alphanum(char c);
 uint8_t is_inside(char c, const char* chars);
 void print_error_loc(token_t *token);
 void print_tokens_as_code(hh_darray_t* tokens);

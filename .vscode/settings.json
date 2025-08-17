@@ -6,6 +6,7 @@
     "lasm_assembler.h": "c",
     "lasm_tokenizer.h": "c",
     "compare": "c",
-    "lasm_macro.h": "c"
+    "lasm_macro.h": "c",
+    "hh_darray.h": "c"
   }
 }
