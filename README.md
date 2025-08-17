@@ -7,7 +7,6 @@ It has all the necessary macros that we love from the C language, namespaces for
 ### What "LOTP" means?
 LOTP is an acronym that I use to give my project's name as a signature of mine. It means "Line On The Paper". From the start of my engineering hobby, I usually start a project on a paper with some sketches and ideas. It refers to the root branch of the start of the project.
 
-___
 ## Features 
 ### Comments and New Lines
   You can write comments with the good old ```//``` double slash. Usually, you do not need to use ```;``` at the end of your lines. New lines are sufficient, but if you want to write multiple statements on one line, you can separate them with semicolons.
