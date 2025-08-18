@@ -42,7 +42,6 @@ uint8_t parser_expression(hh_darray_t *tokens, expression_t *expr){
     if(new_node->right == NULL) return ERR;
     expr->root = new_node;
   }
-  print_expression_tree(expr->root);printf("\n");
   return 0;
 }
 

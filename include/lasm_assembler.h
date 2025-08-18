@@ -7,7 +7,9 @@
 
 #include "lasm_namespace.h"
 #include "lasm_tokenizer.h"
+#include "lasm_parser.h"
 #include "hh_darray.h"
+#include "hh_bigint.h"
 
 #define DEFAULT_ADDRESSING_SIZE 2
 
@@ -33,10 +35,11 @@ extern assembler_t lasm_assembler;
 
 // Function to assemble the code
 uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output);
-uint8_t lasm_token_to_number(token_t *token, uint32_t *number);
+uint8_t lasm_token_to_number(token_t *token, hh_bigint_t *number);
 uint8_t lasm_put_bytes_to_file(hh_darray_t* bytes, FILE *output);
 uint8_t lasm_put_number_to_file(uint32_t number, FILE *output);
 uint8_t lasm_expect_and_skip(hh_darray_t *tokens, TOKEN_ID expected);
 uint8_t lasm_expect(hh_darray_t *tokens, TOKEN_ID expected);
+uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *number);
 
 #endif // LASM_ASSEMBLER_H

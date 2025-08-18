@@ -6,7 +6,9 @@
 #define LASM_NAMESPACE_H
 
 #include "lasm_tokenizer.h"
+#include "lasm_parser.h"
 #include "hh_darray.h"
+#include "hh_bigint.h"
 
 typedef struct{
   token_t name;
@@ -22,7 +24,6 @@ typedef struct{
   uint8_t is_valid; // Whether the label is evaluated
   uint32_t value; 
   token_t name;
-  hh_darray_t vector_expression; // list of tokens
 }label_t;
 
 extern namespace_t global_space; // Global namespace for labels

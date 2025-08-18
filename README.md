@@ -68,7 +68,6 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
   y[x+1]: // So you can use them anywhere as constant values
   z[y+2]:
 
-
   // somewhere[loop - 32]: LASM will report an error for this
   // Cause we don't know where the 'loop' is right now
 

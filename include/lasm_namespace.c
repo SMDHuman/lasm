@@ -92,18 +92,15 @@ uint8_t lasm_namespace_init(hh_darray_t *tokens){
         label_t label = {0};
         memcpy(&label.name, prev_token, sizeof(token_t));
         label.is_vector = 0; // Default value
-        hh_darray_init(&label.vector_expression, sizeof(token_t));
         // Add the label to the current namespace
         hh_darray_append(&current_namespace->labels, &label);
       }
       else if(prev_token->id == SBRAC_C){
         label_t label = {0};
         label.is_vector = 1; // Default value
-        hh_darray_init(&label.vector_expression, sizeof(token_t));
         int32_t j = -2;
         token_t *srch_token =  hh_darray_get_reference(tokens, i + j);
         while(srch_token->id != SBRAC_O){
-          hh_darray_push(&label.vector_expression, 0, srch_token);
           j--;
           if(i + j < 0) {
             print_error_loc(prev_token);
@@ -157,17 +154,10 @@ void lasm_namespace_to_json(namespace_t *namespace, FILE *file, int indent_level
     fprintf(file, "\"%s\": ", label->name.text);
     // Print the label's address expression
     if (label->is_valid) {
-      fprintf(file, "%u%s\n", label->value, (i < hh_darray_get_item_fill(&namespace->labels) - 1) ? "," : "");
+      fprintf(file, "%d%s\n", label->value, (i < hh_darray_get_item_fill(&namespace->labels) - 1) ? "," : "");
     }
     else if(label->is_vector) {
       fprintf(file, "[");
-      for (size_t j = 0; j < hh_darray_get_item_fill(&label->vector_expression); j++) {
-        token_t *token = hh_darray_get_reference(&label->vector_expression, j);
-        fprintf(file, "\"%s\"", token->text);
-        if (j < hh_darray_get_item_fill(&label->vector_expression) - 1) {
-          fprintf(file, ", ");
-        }
-      }
       fprintf(file, "]%s\n", (i < hh_darray_get_item_fill(&namespace->labels) - 1) ? "," : "");
     } 
     else{

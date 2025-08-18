@@ -12,12 +12,12 @@ zp{
 macro_with_args 123+2, 412
 
 {
-start[16+zp.a]:
-LABEL+65536
+start[17+zp.stack.end]:
 start - 0xa
 LABEL:
+LABEL+2
 2-(2+(1+(3+3)))*2+2
-0b11.(10[3*(2-1)]) + 2
+0b11.(0x200[1*(3-2)]) + 2
 start
 zp.c
 "Hello"+3

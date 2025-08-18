@@ -6,7 +6,6 @@
 #include "lasm_tokenizer.h"
 #include "lasm_namespace.h"
 #include "lasm_parser.h"
-#include "hh_bigint.h"
 
 //-----------------------------------------------------------------------------
 assembler_t lasm_assembler;
@@ -40,11 +39,21 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             //TODO: Implement the evaluation of expressions
             expression_t expression;
             if(parser_expression(tokens, &expression) == ERR) return ERR;
-            print_expression_tree(expression.root);printf("\n");
+            hh_bigint_t number; hh_bigint_init(&number, 0);
+            if(lasm_evaluate_expression_tree(expression.root, &number) == ERR) return ERR;
+            if(number.size > 4){
+              printf(TAG);
+              print_error_loc(token);
+              printf("Vector expression exceeds 4 bytes\n");
+            }
+            if(number.size == 1) label->value = (*(uint32_t *)number.data) & 0xff;
+            if(number.size == 2) label->value = (*(uint32_t *)number.data) & 0xffff;
+            if(number.size == 3) label->value = (*(uint32_t *)number.data) & 0xffffff;
+            if(number.size == 4) label->value = (*(uint32_t *)number.data) & 0xffffffff;
+            label->is_valid = 1;
             //...
             if(lasm_expect_and_skip(tokens, SBRAC_C) == ERR) return ERR;
             fseek(output, label->value, SEEK_SET);
-            label->is_valid = 1;
             if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
           }
           else{
@@ -59,7 +68,9 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
           //TODO: Implement the evaluation of expressions
           expression_t expression;
           if(parser_expression(tokens, &expression) == ERR) return ERR;
-          print_expression_tree(expression.root);printf("\n");
+          hh_bigint_t value; hh_bigint_init(&value, 0);
+          if(lasm_evaluate_expression_tree(expression.root, &value) == ERR) return ERR;
+          fwrite(value.data, value.size, 1, lasm_assembler.output_file);
         }
       }
       else if(next_token->id == CBRAC_O){
@@ -88,23 +99,13 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       lasm_assembler.current_namespace = (namespace_t *)lasm_assembler.current_namespace->parent;
       hh_darray_pop(tokens, 0, 0); // Consume curly brace close
     }
-    else if(token->id == NUMBER){
+    else if(token->id == NUMBER || token->id == STRING_DB || token->id == RBRAC_C){
       //TODO: Implement the evaluation of expressions
       expression_t expression;
       if(parser_expression(tokens, &expression) == ERR) return ERR;
-      print_expression_tree(expression.root);printf("\n");
-    }
-    else if(token->id == STRING_DB){
-      //TODO: Implement the evaluation of expressions
-      expression_t expression;
-      if(parser_expression(tokens, &expression) == ERR) return ERR;
-      print_expression_tree(expression.root);printf("\n");
-    }
-    else if(token->id == RBRAC_O){
-      //TODO: Implement the evaluation of expressions
-      expression_t expression;
-      if(parser_expression(tokens, &expression) == ERR) return ERR;
-      print_expression_tree(expression.root);printf("\n");
+      hh_bigint_t value; hh_bigint_init(&value, 0);
+      if(lasm_evaluate_expression_tree(expression.root, &value) == ERR) return ERR;
+      fwrite(value.data, value.size, 1, lasm_assembler.output_file);
     }
     // Vector with no name
     else if(token->id == SBRAC_O){
@@ -116,11 +117,14 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         expression_t expression;
         if(parser_expression(tokens, &expression) == ERR) return ERR;
         print_expression_tree(expression.root);printf("\n");
+        hh_bigint_t value; hh_bigint_init(&value, 0);
+        lasm_evaluate_expression_tree(expression.root, &value);
+        hh_bigint_print_hex(&value);
         // Evaluate expression
-        uint32_t value;// = lasm_evaluate_expression(&expression, output);
-        //...
+        //uint32_t value;// = lasm_evaluate_expression(&expression, output);
+        ////...
         if(lasm_expect_and_skip(tokens, SBRAC_C) == ERR) return ERR;
-        fseek(output, value, SEEK_SET);
+        //fseek(output, value, SEEK_SET);
         if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
       }else{
         printf(TAG);
@@ -150,12 +154,6 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   
   return 0;
 }
-//-----------------------------------------------------------------------------
-// Evaluate the expression. Return ERR if there is invalid branch 
-uint8_t lasm_evaluate_expression(expression_t *expr, hh_bigint_t *number){
-  if(expr->root == NULL) return ERR; // No expression to evaluate
-  // Evaluate the expression tree
-}
 
 //-----------------------------------------------------------------------------
 uint32_t get_size_of_file(FILE* file){
@@ -181,19 +179,15 @@ uint8_t lasm_put_bytes_to_file(hh_darray_t* bytes, FILE *output){
   return 0;
 }
 //----------------------------------------------------------------------------
-uint8_t lasm_token_to_number(token_t *token, uint32_t *number){
+uint8_t lasm_token_to_number(token_t *token, hh_bigint_t *number){
   if(token->id == NUMBER){
-      if(strlen(token->text) >= 3){
-          if(memcmp(token->text, "0b", 2) == 0){ // If number binary
-                *number = strtol(&token->text[2], NULL, 2);	         
-                return 0;       
-          }else if(memcmp(token->text, "0x", 2) == 0){ // If number hexadecimal
-                *number = strtol(&token->text[2], NULL, 16);
-                return 0;
-          }
-      }
-        // Else expect decimal
-        *number = strtol(token->text, NULL, 10);
+    // Convert token text to bigint
+    if(hh_bigint_convert_from_string(number, token->text) == ERR){
+      printf(TAG);
+      print_error_loc(token);
+      printf("Invalid number format: '%s'\n", token->text);
+      return(ERR);
+    }
   }else{
       printf(TAG);
       print_error_loc(token);
@@ -227,4 +221,78 @@ uint8_t lasm_expect_and_skip(hh_darray_t *tokens, TOKEN_ID expected){
   }
   hh_darray_pop(tokens, 0, 0);
   return 0;
+}
+
+//-----------------------------------------------------------------------------
+uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *number){
+  if(node == NULL) return 0; // No expression to evaluate
+  if(node->left != NULL && node->right != NULL) {
+    hh_bigint_t left_number; hh_bigint_init(&left_number, 0);
+    lasm_evaluate_expression_tree((expression_tree_t*)node->left, &left_number); // Evaluate left subtree
+    hh_bigint_t right_number; hh_bigint_init(&right_number, 0);
+    lasm_evaluate_expression_tree((expression_tree_t*)node->right, &right_number); // Evaluate right subtree
+    size_t biggest_size = (left_number.size > right_number.size ? left_number.size : right_number.size);
+    if(node->token.id == PLUS) {
+      hh_bigint_add(&left_number, &right_number, number);
+    } else if(node->token.id == MINUS) {
+      hh_bigint_subtract(&left_number, &right_number, number);
+    } else if(node->token.id == ASTERISK) {
+      hh_bigint_multiply(&left_number, &right_number, number);
+    } else if(node->token.id == DOT){
+      size_t *size = (size_t*)right_number.data;
+      if(*size == 0){
+        hh_bigint_set_zero(number);
+      }else{
+        hh_bigint_resize(&left_number, *size);
+        hh_bigint_copy(number, &left_number);
+      }
+    }else if(node->token.id == INDEX){
+      if(right_number.sign == 1){
+        printf(TAG);
+        print_error_loc(&node->token);
+        printf("Indexing with negative number is not allowed: '%s'\n", node->token.text);
+        return ERR;
+      }
+      size_t *index = (size_t*)right_number.data;
+      uint8_t num = hh_bigint_get_at(&left_number, *index);
+      hh_bigint_set_zero(number); hh_bigint_set_at(number, num, 0);
+    }
+    else{
+      printf(TAG);
+      print_error_loc(&node->token);
+      printf("Unsupported operation: '%s'\n", node->token.text);
+      return ERR;
+    }
+    if(number->size < biggest_size){
+      if(hh_bigint_resize(number, biggest_size) == ERR) return ERR;
+    }
+  }else if(node->token.id == NUMBER){
+    if(hh_bigint_convert_from_string(number, node->token.text) == ERR) return ERR;
+  }else if(node->token.id == STRING_DB){
+    hh_bigint_resize(number, strlen(node->token.text));
+    memcpy(number->data, node->token.text, strlen(node->token.text));
+  }else if(node->token.id == WORD){
+    label_t *label = lasm_find_label_in_namespace(lasm_assembler.current_namespace, node->token.text);
+    if(label == NULL){
+      printf(TAG);
+      print_error_loc(&node->token);
+      printf("Undefined label: '%s'\n", node->token.text);
+      return ERR;
+    }
+    if(label->is_valid){
+      // Handle valid label
+      hh_bigint_set_uint32(number, label->value);
+      if(label->is_vector){
+        hh_bigint_normalize(number);
+      }else{
+        hh_bigint_resize(number, DEFAULT_ADDRESSING_SIZE);
+      }
+      return 0;
+    }else{
+      printf(TAG);
+      print_error_loc(&node->token);
+      printf("Invalid label: '%s'\n", node->token.text);
+      return ERR;
+    }
+  }
 }

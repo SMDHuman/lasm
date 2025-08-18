@@ -43,7 +43,6 @@ int main(int argc, char *argv[]){
   if(lasm_apply_macros(&tokens, &macros) == ERR) return ERR;
   if(lasm_newline_after_branches(&tokens) == ERR) return ERR;
   if(lasm_clear_multi_newlines(&tokens) == ERR) return ERR;
-  print_tokens_as_code(&tokens);
   //print_tokens_as_code(&tokens);
   //====================================
   // Parse selected cpu and assemble tokens
