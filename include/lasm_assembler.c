@@ -169,6 +169,7 @@ uint8_t lasm_put_number_to_file(uint32_t number, FILE *output){
   else if(number <= UINT16_MAX) fwrite(&number, 2, 1, output);
   else if(number <= (1<<24)) fwrite(&number, 3, 1, output);
   else if(number <= UINT32_MAX) fwrite(&number, 4, 1, output);
+  return 0;
 }
 //----------------------------------------------------------------------------
 uint8_t lasm_put_bytes_to_file(hh_darray_t* bytes, FILE *output){
@@ -295,4 +296,5 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
       return ERR;
     }
   }
+  return 0;
 }

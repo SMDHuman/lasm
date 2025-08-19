@@ -92,7 +92,7 @@ expression_tree_t* parser_expression_right(hh_darray_t *tokens, expression_t *ex
     return expr_tree_out; // Return the expression tree
   }
   // Look for the precedence value of next token
-  uint32_t my_precedence = tokens_precedence(token) ;
+  int32_t my_precedence = tokens_precedence(token) ;
   // Compare with the current precedence
   if(my_precedence >= precedence){
     hh_darray_append(&expr->expression_tree_buffer, 0); // create new node

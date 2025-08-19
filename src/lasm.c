@@ -5,6 +5,7 @@
 #define HH_DARRAY_IMPLEMENTATION
 #include "hh_darray.h"
 #define HH_BIGINT_IMPLEMENTATION
+#define INITIAL_CAPACITY 1
 #include "hh_bigint.h"
 
 #include "lasm_tokenizer.h"

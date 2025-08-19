@@ -338,6 +338,7 @@ uint8_t lasm_6502_assemble(void){
 
 
   hh_darray_deinit(&value_bytes);
+  return 0;
 }
 
 // return 255 if false, index of it if true
@@ -368,6 +369,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0x79;
         case ADM_X_IND: return 0x61;
         case ADM_IND_Y: return 0x71;
+        default: return 0xFF;
       }
       break;
     case 1: // AND
@@ -380,6 +382,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0x39;
         case ADM_X_IND: return 0x21;
         case ADM_IND_Y: return 0x31;
+        default: return 0xFF;
       }
       break;
     case 2: // ASL
@@ -389,77 +392,92 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG_X: return 0x16;
         case ADM_ABS: return 0x0E;
         case ADM_ABS_X: return 0x1E;
+        default: return 0xFF;
       }
       break;
     case 3: // BCC
       switch (addr_mode){
         case ADM_REL: return 0x90;
+        default: return 0xFF;
       }
       break;
     case 4: // BCS
       switch (addr_mode){
         case ADM_REL: return 0xB0;
+        default: return 0xFF;
       }
       break;
     case 5: // BEQ
       switch (addr_mode){
         case ADM_REL: return 0xF0;
+        default: return 0xFF;
       }
       break;
     case 6: // BIT
       switch (addr_mode){
         case ADM_ZPG: return 0x24;
         case ADM_ABS: return 0x2C;
+        default: return 0xFF;
       }
       break;
     case 7: // BMI
       switch (addr_mode){
         case ADM_REL: return 0x30;
+        default: return 0xFF;
       }
       break;
     case 8: // BNE
       switch (addr_mode){
         case ADM_REL: return 0xD0;
+        default: return 0xFF;
       }
       break;
     case 9: // BPL
       switch (addr_mode){
         case ADM_REL: return 0x10;
+        default: return 0xFF;
       }
       break;
     case 10: // BRK
       switch (addr_mode){
         case ADM_IMPL: return 0x00;
+        default: return 0xFF;
       }
       break;
     case 11: // BVC
       switch (addr_mode){
         case ADM_REL: return 0x50;
+        default: return 0xFF;
       }
       break;
     case 12: // BVS
       switch (addr_mode){
         case ADM_REL: return 0x70;
+        default: return 0xFF;
       }
       break;
     case 13: // CLC
       switch (addr_mode){
         case ADM_IMPL: return 0x18;
+        default: return 0xFF;
       }
       break;
     case 14: // CLD
       switch (addr_mode){
         case ADM_IMPL: return 0xD8;
+        default: return 0xFF;
       }
       break;
     case 15: // CLI
       switch (addr_mode){
         case ADM_IMPL: return 0x58;
+        default: return 0xFF;
       }
       break;
     case 16: // CLV
       switch (addr_mode){
         case ADM_IMPL: return 0xB8;
+        default: return 0xFF;
       }
       break;
     case 17: // CMP
@@ -472,6 +490,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0xD9;
         case ADM_X_IND: return 0xC1;
         case ADM_IND_Y: return 0xD1;
+        default: return 0xFF;
       }
       break;
     case 18: // CPX
@@ -479,6 +498,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_IMM: return 0xE0;
         case ADM_ZPG: return 0xE4;
         case ADM_ABS: return 0xEC;
+        default: return 0xFF;
       }
       break;
     case 19: // CPY
@@ -486,6 +506,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_IMM: return 0xC0;
         case ADM_ZPG: return 0xC4;
         case ADM_ABS: return 0xCC;
+        default: return 0xFF;
       }
       break;
     case 20: // DEC
@@ -494,16 +515,19 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG_X: return 0xD6;
         case ADM_ABS: return 0xCE;
         case ADM_ABS_X: return 0xDE;
+        default: return 0xFF;
       }
       break;
     case 21: // DEX
       switch (addr_mode){
         case ADM_IMPL: return 0xCA;
+        default: return 0xFF;
       }
       break;
     case 22: // DEY
       switch (addr_mode){
         case ADM_IMPL: return 0x88;
+        default: return 0xFF;
       }
       break;
     case 23: // EOR
@@ -516,6 +540,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0x59;
         case ADM_X_IND: return 0x41;
         case ADM_IND_Y: return 0x51;
+        default: return 0xFF;
       }
       break;
     case 24: // INC
@@ -524,27 +549,32 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG_X: return 0xF6;
         case ADM_ABS: return 0xEE;
         case ADM_ABS_X: return 0xFE;
+        default: return 0xFF;
       }
       break;
     case 25: // INX
       switch (addr_mode){
         case ADM_IMPL: return 0xE8;
+        default: return 0xFF;
       }
       break;
     case 26: // INY
       switch (addr_mode){
         case ADM_IMPL: return 0xC8;
+        default: return 0xFF;
       }
       break;
     case 27: // JMP
       switch (addr_mode){
         case ADM_ABS: return 0x4C;
         case ADM_IND: return 0x6C;
+        default: return 0xFF;
       }
       break;
     case 28: // JSR
       switch (addr_mode){
         case ADM_ABS: return 0x20;
+        default: return 0xFF;
       }
       break;
     case 29: // LDA
@@ -557,6 +587,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0xB9;
         case ADM_X_IND: return 0xA1;
         case ADM_IND_Y: return 0xB1;
+        default: return 0xFF;
       }
       break;
     case 30: // LDX
@@ -566,6 +597,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG_Y: return 0xB6;
         case ADM_ABS: return 0xAE;
         case ADM_ABS_Y: return 0xBE;
+        default: return 0xFF;
       }
       break;
     case 31: // LDY
@@ -575,6 +607,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG_X: return 0xB4;
         case ADM_ABS: return 0xAC;
         case ADM_ABS_X: return 0xBC;
+        default: return 0xFF;
       }
       break;
     case 32: // LSR
@@ -584,11 +617,13 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG_X: return 0x56;
         case ADM_ABS: return 0x4E;
         case ADM_ABS_X: return 0x5E;
+        default: return 0xFF;
       }
       break;
     case 33: // NOP
       switch (addr_mode){
         case ADM_IMPL: return 0xEA;
+        default: return 0xFF;
       }
       break;
     case 34: // ORA
@@ -601,26 +636,31 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0x19;
         case ADM_X_IND: return 0x01;
         case ADM_IND_Y: return 0x11;
+        default: return 0xFF;
       }
       break;
     case 35: // PHA
       switch (addr_mode){
         case ADM_IMPL: return 0x48;
+        default: return 0xFF;
       }
       break;
     case 36: // PHP
       switch (addr_mode){
         case ADM_IMPL: return 0x08;
+        default: return 0xFF;
       }
       break;
     case 37: // PLA
       switch (addr_mode){
         case ADM_IMPL: return 0x68;
+        default: return 0xFF;
       }
       break;
     case 38: // PLP
       switch (addr_mode){
         case ADM_IMPL: return 0x28;
+        default: return 0xFF;
       }
       break;
     case 39: // ROL
@@ -630,6 +670,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG_X: return 0x36;
         case ADM_ABS: return 0x2E;
         case ADM_ABS_X: return 0x3E;
+        default: return 0xFF;
       }
       break;
     case 40: // ROR
@@ -639,16 +680,19 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG_X: return 0x76;
         case ADM_ABS: return 0x6E;
         case ADM_ABS_X: return 0x7E;
+        default: return 0xFF;
       }
       break;
     case 41: // RTI
       switch (addr_mode){
         case ADM_IMPL: return 0x40;
+        default: return 0xFF;
       }
       break;
     case 42: // RTS
       switch (addr_mode){
         case ADM_IMPL: return 0x60;
+        default: return 0xFF;
       }
       break;
     case 43: // SBC
@@ -661,21 +705,25 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0xF9;
         case ADM_X_IND: return 0xE1;
         case ADM_IND_Y: return 0xF1;
+        default: return 0xFF;
       }
       break;
     case 44: // SEC
       switch (addr_mode){
         case ADM_IMPL: return 0x38;
+        default: return 0xFF;
       }
       break;
     case 45: // SED
       switch (addr_mode){
         case ADM_IMPL: return 0xF8;
+        default: return 0xFF;
       }
       break;
     case 46: // SEI
       switch (addr_mode){
         case ADM_IMPL: return 0x78;
+        default: return 0xFF;
       }
       break;
     case 47: // STA
@@ -687,6 +735,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ABS_Y: return 0x99;
         case ADM_X_IND: return 0x81;
         case ADM_IND_Y: return 0x91;
+        default: return 0xFF;
       }
       break;
     case 48: // STX
@@ -694,6 +743,7 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG: return 0x86;
         case ADM_ZPG_Y: return 0x96;
         case ADM_ABS: return 0x8E;
+        default: return 0xFF;
       }
       break;
     case 49: // STY
@@ -701,38 +751,47 @@ uint8_t get_value_of_instruction(uint8_t inst_id, addressing_modes_e addr_mode){
         case ADM_ZPG: return 0x84;
         case ADM_ZPG_X: return 0x94;
         case ADM_ABS: return 0x8C;
+        default: return 0xFF;
       }
       break;
     case 50: // TAX
       switch (addr_mode){
         case ADM_IMPL: return 0xAA;
+        default: return 0xFF;
       }
       break;
     case 51: // TAY
       switch (addr_mode){
         case ADM_IMPL: return 0xA8;
+        default: return 0xFF;
       }
       break;
     case 52: // TSX
       switch (addr_mode){
         case ADM_IMPL: return 0xBA;
+        default: return 0xFF;
       }
       break;
     case 53: // TXA
       switch (addr_mode){
         case ADM_IMPL: return 0x8A;
+        default: return 0xFF;
       }
       break;
     case 54: // TXS
       switch (addr_mode){
         case ADM_IMPL: return 0x9A;
+        default: return 0xFF;
       }
       break;
     case 55: // TYA
       switch (addr_mode){
         case ADM_IMPL: return 0x98;
+        default: return 0xFF;
       }
       break;
+    default:
+      return 0xFF;
   }
   return 0xFF;
 }
