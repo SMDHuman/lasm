@@ -9,7 +9,7 @@ first{
   }
 }
 
-asd{
+{
   locater[0x1000]:
   this:
   that:
