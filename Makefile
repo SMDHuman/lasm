@@ -1,11 +1,9 @@
 # Compiler and flags
 CC := cc
-INCLUDE := -I include/ -I src/cpu/
-CFLAGS := -ggdb -Wall -Wextra
+CFLAGS := -ggdb -Wall -Wextra -I include -I src/cpu -I src
 
 # Source directories
 SRC_DIR := src
-INCLUDE_DIR := include
 CPU_DIR := src/cpu
 BUILD_DIR := build
 
@@ -17,12 +15,12 @@ OBJECTS := $(BUILD_DIR)/lasm_namespace.o \
 			 $(BUILD_DIR)/lasm_tokenizer.o
 
 # Main target
-$(BUILD_DIR)/lasm: $(BUILD_DIR) $(SRC_DIR)/lasm.c $(wildcard $(INCLUDE_DIR)/*) $(wildcard $(CPU_DIR)/*) $(OBJECTS)
-	$(CC) -o $@ $(INCLUDE) $(OBJECTS) $(SRC_DIR)/lasm.c $(CFLAGS)
+$(BUILD_DIR)/lasm: $(BUILD_DIR) $(wildcard $(SRC_DIR)/*) $(wildcard $(CPU_DIR)/*) $(OBJECTS)
+	$(CC) -o $@ $(OBJECTS) $(SRC_DIR)/lasm.c $(CFLAGS)
 
 # Generic rule for object files
-$(BUILD_DIR)/%.o: $(INCLUDE_DIR)/%.c $(INCLUDE_DIR)/%.h
-	$(CC) -c $< -o $@ $(INCLUDE) $(CFLAGS)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(SRC_DIR)/%.h
+	$(CC) -c $< -o $@ $(CFLAGS)
 
 # Create build directory
 $(BUILD_DIR):
