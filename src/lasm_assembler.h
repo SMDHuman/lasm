@@ -24,8 +24,9 @@ typedef struct{
 typedef struct{
   token_t name;
   expression_t expression;
-  hh_bigint_t value; // Value of the label 
+  uint64_t value; // Value of the label 
   uint8_t is_vector; // Whether the label changes the address pointer
+  uint8_t is_evaluated; // Whether the label value has been evaluated
 }label_t;
 
 typedef struct{

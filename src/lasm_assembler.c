@@ -51,16 +51,24 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         hh_darray_pop(tokens, 0, 0); // Consume curly brace open
       }
       else if(is_lineend_token_id(tokens, 0, COLON)){
-        label_t temp = {.name = *token};
+        hh_darray_append(&lasm_assembler.current_namespace->labels, 0); 
+        label_t* new_label = hh_darray_get_end_reference(&lasm_assembler.current_namespace->labels);
+        new_label->name = *token;
         if(next_token->id == SBRAC_O){
-          temp.is_vector = 1;
+          new_label->is_vector = 1;
           hh_darray_pop(tokens, 0, 0); // Consume name
           hh_darray_pop(tokens, 0, 0); // Consume square brace open
-          if(parser_expression(tokens, &temp.expression) == ERR) return ERR;
-          hh_darray_pop(tokens, 0, 0); // Consume square brace close
-          hh_darray_pop(tokens, 0, 0); // Consume square brace colon
+          if(parser_expression(tokens, &new_label->expression) == ERR) return ERR;
+          if(lasm_expect_and_skip(tokens, SBRAC_C) == ERR) return ERR;
+          if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
         }
-        hh_darray_append(&lasm_assembler.current_namespace->labels, &temp);   
+        else{
+          hh_darray_pop(tokens, 0, 0); // Consume name
+          if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
+          new_label->is_vector = 0;
+          new_label->value = get_size_of_file(lasm_assembler.output_file);
+          new_label->is_evaluated = 1;
+        }
       }
       else{
         label_t* label = lasm_find_label_reachable_namespace(lasm_assembler.current_namespace, token->text);
@@ -344,7 +352,13 @@ void lasm_export_json_namespace(namespace_t* ns, FILE* file, uint8_t indent_leve
     print_indent(indent_level + 3, file);
     fprintf(file, "\"name\": \"%s\",\n", label.name.text);
     print_indent(indent_level + 3, file);
-    fprintf(file, "\"is_vector\": %s\n", label.is_vector ? "true" : "false");
+    fprintf(file, "\"is_vector\": %s", label.is_vector ? "true" : "false");
+    if(label.is_evaluated){
+      fprintf(file, ",\n");
+      print_indent(indent_level + 3, file);
+      fprintf(file, "\"value\": %ld", label.value);
+    }
+    fprintf(file, "\n");
     print_indent(indent_level + 2, file);
     fprintf(file, "}%s\n", i < hh_darray_get_item_fill(&ns->labels) - 1 ? "," : "");
   }

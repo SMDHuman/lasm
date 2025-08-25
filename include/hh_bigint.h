@@ -5,7 +5,7 @@
 // functions return 255 on failure
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 19.08.2025
+// Last Update	: 25.08.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_BIGINT_H
 #define HH_BIGINT_H
@@ -35,6 +35,7 @@ uint8_t hh_bigint_resize(hh_bigint_t *bigint, const size_t new_capacity);
 uint8_t hh_bigint_set_zero(hh_bigint_t *bigint);
 uint8_t hh_bigint_set_int32(hh_bigint_t *bigint, const int32_t value);
 uint8_t hh_bigint_set_uint32(hh_bigint_t *bigint, const uint32_t value);
+uint8_t hh_bigint_set_uint16(hh_bigint_t *bigint, const uint16_t value);
 uint8_t hh_bigint_set_buffer(hh_bigint_t *bigint, const void *data, const size_t size);
 uint8_t hh_bigint_set_at(hh_bigint_t *bigint, const uint8_t value, const size_t index);
 uint8_t hh_bigint_get_at(const hh_bigint_t *bigint, const size_t index);
@@ -116,6 +117,12 @@ uint8_t hh_bigint_set_int32(hh_bigint_t *bigint, int32_t value){
 uint8_t hh_bigint_set_uint32(hh_bigint_t *bigint, const uint32_t value){
     bigint->sign = 0;
     if(hh_bigint_set_buffer(bigint, &value, 4) == ERR) return ERR;
+    return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_set_uint16(hh_bigint_t *bigint, const uint16_t value){
+    bigint->sign = 0;
+    if(hh_bigint_set_buffer(bigint, &value, 2) == ERR) return ERR;
     return 0;
 }
 //-----------------------------------------------------------------------------
