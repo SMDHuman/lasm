@@ -10,7 +10,6 @@
 
 #include "lasm_tokenizer.h"
 #include "lasm_macro.h"
-#include "lasm_namespace.h"
 #include "lasm_assembler.h"
 #include "lasm_parser.h"
 
@@ -47,9 +46,6 @@ int main(int argc, char *argv[]){
   //print_tokens_as_code(&tokens);
   //====================================
   // Parse selected cpu and assemble tokens
-  lasm_namespace_init(&tokens);
-
-  //====================================
   uint8_t cpu_i = get_arg_index(argc, argv, "-m"); // Machine cpu name
   if(cpu_i){
     if(strcmp(argv[cpu_i+1], "6502") == 0){
@@ -64,11 +60,7 @@ int main(int argc, char *argv[]){
     printf("[ERROR] No machine specified\n");
     return 0;
   }
-  //print_tokens_as_code(&tokens);
-
-  FILE *json_f = fopen("build/global_space.json", "w");
-  lasm_namespace_to_json(&global_space, json_f, 0);
-  fclose(json_f);
+  //====================================
 
   // Assemble tokens
   FILE *output = fopen(output_name, "w+");
@@ -80,11 +72,11 @@ int main(int argc, char *argv[]){
   }
   fclose(output);
 
+  //...
+  FILE *json = fopen("build/global_namespace.json", "w");
+  lasm_export_json_namespace(&lasm_assembler.global_namespace, json, 0);
+  fclose(json);
 
-  json_f = fopen("build/global_space.json", "w");
-  lasm_namespace_to_json(&global_space, json_f, 0);
-  fclose(json_f);
-  
   //...
   printf("Done!\n");
   hh_darray_deinit(&tokens);

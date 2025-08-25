@@ -8,8 +8,7 @@ CPU_DIR := src/cpu
 BUILD_DIR := build
 
 # Object files
-OBJECTS := $(BUILD_DIR)/lasm_namespace.o \
-			 $(BUILD_DIR)/lasm_assembler.o \
+OBJECTS := $(BUILD_DIR)/lasm_assembler.o \
 			 $(BUILD_DIR)/lasm_parser.o \
 			 $(BUILD_DIR)/lasm_macro.o \
 			 $(BUILD_DIR)/lasm_tokenizer.o

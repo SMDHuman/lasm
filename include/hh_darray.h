@@ -4,7 +4,7 @@
 // implement the functions of the library
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 12.08.2025
+// Last Update	: 25.08.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_DARRAY_INIT_SIZE
 #define HH_DARRAY_INIT_SIZE 16
@@ -75,6 +75,8 @@ size_t hh_darray_is_inside(hh_darray_t* array, void* item);
 void* hh_darray_get_reference(hh_darray_t* array, size_t index); 
 // Returns the pointer to the last item in the array
 void* hh_darray_get_end_reference(hh_darray_t* array);
+// Removes the item in it if given with same pointer contains it
+void hh_darray_remove_reference(hh_darray_t* array, void* reference);
 // Remove all elements
 void hh_darray_clear(hh_darray_t* array);
 
@@ -220,6 +222,16 @@ void hh_darray_clear(hh_darray_t* array);
 	//-----------------------------------------------------------------------------
 	void* hh_darray_get_end_reference(hh_darray_t* array){
 		return hh_darray_get_reference(array, hh_darray_get_item_fill(array) - 1);
+	}
+	//-----------------------------------------------------------------------------
+	void hh_darray_remove_reference(hh_darray_t* array, void* reference){
+		for(size_t i = 0; i < hh_darray_get_item_fill(array); i++){
+			void* item = hh_darray_get_reference(array, i);
+			if(item == reference){
+				hh_darray_pop(array, i, 0);
+				break;
+			}
+		}
 	}
 	//-----------------------------------------------------------------------------
 	void hh_darray_clear(hh_darray_t* array){

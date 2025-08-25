@@ -4,6 +4,8 @@
 #include "hh_darray.h"
 #include "lasm_assembler.h"
 
+static const char TAG[] = "[6502]";
+
 /* Address Modes
   A				Accumulator						OPC A					operand is AC (implied single byte instruction)
   abs			absolute							OPC $LLHH			operand is address $HHLL *
@@ -152,6 +154,7 @@ uint8_t lasm_6502_assemble(void){
   uint8_t inst_id = is_instruction(token);
   if(inst_id == 255){
     // Handle unknown instruction
+    printf(TAG);
     print_error_loc(token);
     printf("Unknown instruction: %s\n", token->text);
     return ERR;
@@ -207,6 +210,7 @@ uint8_t lasm_6502_assemble(void){
           hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
           addr_mode = ADM_ZPG_Y;
         }else{
+          printf(TAG);
           print_error_loc(token);
           printf("[ERROR] Expected 'X' or 'Y' after ','\n");
           return ERR;
@@ -224,6 +228,7 @@ uint8_t lasm_6502_assemble(void){
           hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
           addr_mode = ADM_ABS_Y;
         }else{
+          printf(TAG);
           print_error_loc(token);
           printf("[ERROR] Expected 'X' or 'Y' after ','\n");
           return ERR;
@@ -265,6 +270,7 @@ uint8_t lasm_6502_assemble(void){
       hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
       if(token->id == COMMA){
         if(hh_darray_get_fill(&value_bytes) > 1){
+          printf(TAG);
           print_error_loc(token);
           printf("[ERROR] Expected 1 byte but got %lu bytes\n", hh_darray_get_fill(&value_bytes));
           return ERR;
@@ -275,6 +281,7 @@ uint8_t lasm_6502_assemble(void){
           addr_mode = ADM_IND_Y;
         }
         else{
+          printf(TAG);
           print_error_loc(token);
           printf("Expected 'Y' after ','\n");
           return ERR;
@@ -290,6 +297,7 @@ uint8_t lasm_6502_assemble(void){
     else{
       // Ensure its 1 byte from code
       if(hh_darray_get_fill(&value_bytes) > 1){
+        printf(TAG);
         print_error_loc(token);
         printf("[ERROR] Expected 1 byte but got %lu bytes\n", hh_darray_get_fill(&value_bytes));
         return ERR;
@@ -300,12 +308,14 @@ uint8_t lasm_6502_assemble(void){
           hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
           addr_mode = ADM_X_IND;
         }else{
+          printf(TAG);
           print_error_loc(token);
           printf("[ERROR] Expected 'X' after ','\n");
           return ERR;
         }
         
         if(token->id != RBRAC_C){
+          printf(TAG);
           print_error_loc(token);
           printf("Expected a right bracket ')' but got '%s'\n", token->text);
           return ERR;
@@ -313,6 +323,7 @@ uint8_t lasm_6502_assemble(void){
         hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
       }
       else{
+        printf(TAG);
         print_error_loc(token);
         printf("Invalid Indirect Addressing Mode\n");
         return ERR;
@@ -322,6 +333,7 @@ uint8_t lasm_6502_assemble(void){
   //=================================================
   // Is this addressing mode valid with instruction
   if(!(inst_addrs_mods[inst_id] & addr_mode)){
+    printf(TAG);
     print_error_loc(token);
     char word[4]={0}; memcpy(&word, inst_words[inst_id], 3); 
     printf("Addressing mode '%s' not valid for instruction '%s'\n", addressing_mode_words[addressing_modes_index_map(addr_mode)], word);

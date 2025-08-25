@@ -10,8 +10,8 @@
 
 typedef struct {
   token_t token;
-  struct expression_tree_t *left;
-  struct expression_tree_t *right;
+  void *left; // expression_tree_t
+  void *right; // expression_tree_t
 } expression_tree_t;
 
 typedef struct{
@@ -23,7 +23,6 @@ typedef struct{
 } expression_t;
 
 uint8_t parser_expression(hh_darray_t *tokens, expression_t *expr);
-// If return 0, had an error
 expression_tree_t* parser_expression_right(hh_darray_t *tokens, expression_t *expr, int32_t precedence);
 void print_expression_tree(expression_tree_t *root);
 

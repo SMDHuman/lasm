@@ -4,21 +4,31 @@
 //-----------------------------------------------------------------------------
 #include "lasm_assembler.h"
 #include "lasm_tokenizer.h"
-#include "lasm_namespace.h"
 #include "lasm_parser.h"
 
 //-----------------------------------------------------------------------------
 assembler_t lasm_assembler;
 
 static uint32_t get_size_of_file(FILE* file);
-const char TAG[] = "[ASMB]";
+static const char TAG[] = "[ASMB]";
 
 //-----------------------------------------------------------------------------
 // Function to assemble the code
 uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
-  //...
-  lasm_assembler.current_namespace = &global_space;
-  lasm_assembler.unnamed_namespace_index = 0;
+  // Initialize global namespace
+  lasm_assembler.global_namespace = (namespace_t){0};
+  token_t* first_token = hh_darray_get_reference(tokens, 0);
+  memcpy(&lasm_assembler.global_namespace.name, first_token, sizeof(token_t));
+  memset(lasm_assembler.global_namespace.name.text, 0, MAX_TOKEN_SIZE);
+  strcat(lasm_assembler.global_namespace.name.text, "__global__");
+  lasm_assembler.global_namespace.name.id = 0;
+  lasm_assembler.global_namespace.level = 0;
+  lasm_assembler.global_namespace.constant = 1;
+  hh_darray_init(&lasm_assembler.global_namespace.childs, sizeof(namespace_t));
+  hh_darray_init(&lasm_assembler.global_namespace.labels, sizeof(label_t));
+  lasm_assembler.current_namespace = &lasm_assembler.global_namespace;
+  // Initialize other properties of assembler
+  lasm_assembler.unnamed_namespace_count = 0;
   lasm_assembler.tokens = tokens;
   lasm_assembler.output_file = output;
   hh_darray_init(&lasm_assembler.backward_patches, sizeof(expression_t));
@@ -28,75 +38,62 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
     if(token->id == WORD){
       // Handle word token
       token_t *next_token = hh_darray_get_reference(tokens, 1);
-      label_t *label = lasm_find_label_in_namespace(lasm_assembler.current_namespace, token->text);
-      if(label != NULL){
-        if(is_lineend_token_id(tokens, 0, COLON)){
-          if(label->is_vector){
-            // Handle vector token
-            hh_darray_pop(tokens, 0, 0); // Consume label token
-            hh_darray_pop(tokens, 0, 0); // Consume open bracket
-            //...
-            //TODO: Implement the evaluation of expressions
-            expression_t expression;
-            if(parser_expression(tokens, &expression) == ERR) return ERR;
-            hh_bigint_t number; hh_bigint_init(&number, 0);
-            if(lasm_evaluate_expression_tree(expression.root, &number) == ERR) return ERR;
-            if(number.size > 4){
-              printf(TAG);
-              print_error_loc(token);
-              printf("Vector expression exceeds 4 bytes\n");
-            }
-            if(number.size == 1) label->value = (*(uint32_t *)number.data) & 0xff;
-            if(number.size == 2) label->value = (*(uint32_t *)number.data) & 0xffff;
-            if(number.size == 3) label->value = (*(uint32_t *)number.data) & 0xffffff;
-            if(number.size == 4) label->value = (*(uint32_t *)number.data) & 0xffffffff;
-            label->is_valid = 1;
-            //...
-            if(lasm_expect_and_skip(tokens, SBRAC_C) == ERR) return ERR;
-            fseek(output, label->value, SEEK_SET);
-            if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
-          }
-          else{
-            // Handle unknown label
-            hh_darray_pop(tokens, 0, 0); // Consume label token
-            hh_darray_pop(tokens, 0, 0); // Consume colon token
-            //...
-            label->value = get_size_of_file(output);
-            label->is_valid = 1;
-          }
-        }else{
-          //TODO: Implement the evaluation of expressions
-          expression_t expression;
-          if(parser_expression(tokens, &expression) == ERR) return ERR;
-          hh_bigint_t value; hh_bigint_init(&value, 0);
-          if(lasm_evaluate_expression_tree(expression.root, &value) == ERR) return ERR;
-          fwrite(value.data, value.size, 1, lasm_assembler.output_file);
-        }
-      }
-      else if(next_token->id == CBRAC_O){
-        // Enter namespace with name
-        lasm_assembler.current_namespace = lasm_find_namespace_from_all(token->text);
-        if (lasm_assembler.current_namespace == NULL) {
-          print_error_loc(token);
-          printf("Unknown namespace: %s\n", token->text);
-          return ERR;
-        }
-        hh_darray_pop(tokens, 0, 0); // Consume label token
+      if(next_token->id == CBRAC_O){
+        namespace_t temp = {.constant = 1,
+                            .level = lasm_assembler.current_namespace->level + 1,
+                            .parent = lasm_assembler.current_namespace,
+                            .name = *token};
+        hh_darray_append(&lasm_assembler.current_namespace->childs, &temp);
+        lasm_assembler.current_namespace = hh_darray_get_end_reference(&lasm_assembler.current_namespace->childs);
+        hh_darray_init(&lasm_assembler.current_namespace->childs, sizeof(namespace_t));
+        hh_darray_init(&lasm_assembler.current_namespace->labels, sizeof(label_t));
+        hh_darray_pop(tokens, 0, 0); // Consume name
         hh_darray_pop(tokens, 0, 0); // Consume curly brace open
-      }else{
-        if(lasm_assembler.machine_assemble() == ERR) return ERR;
+      }
+      else if(is_lineend_token_id(tokens, 0, COLON)){
+        label_t temp = {.name = *token};
+        if(next_token->id == SBRAC_O){
+          temp.is_vector = 1;
+          hh_darray_pop(tokens, 0, 0); // Consume name
+          hh_darray_pop(tokens, 0, 0); // Consume square brace open
+          if(parser_expression(tokens, &temp.expression) == ERR) return ERR;
+          hh_darray_pop(tokens, 0, 0); // Consume square brace close
+          hh_darray_pop(tokens, 0, 0); // Consume square brace colon
+        }
+        hh_darray_append(&lasm_assembler.current_namespace->labels, &temp);   
+      }
+      else{
+        label_t* label = lasm_find_label_reachable_namespace(lasm_assembler.current_namespace, token->text);
+        if(label){
+          print_expression_tree(label->expression.root); printf("\n");
+          hh_darray_pop(tokens, 0, 0); // Consume token
+        }
+        else{
+          if(lasm_assembler.machine_assemble() == ERR) return ERR;
+        }
       }
     }
     else if(token->id == CBRAC_O){
       // Handle '{' token
-      char index_str[16];
-      sprintf(index_str, "__unnamed%d__", lasm_assembler.unnamed_namespace_index++);
-      lasm_assembler.current_namespace = lasm_find_namespace_from_all(index_str);
+      namespace_t temp = {.constant = 0,
+                          .level = lasm_assembler.current_namespace->level + 1,
+                          .parent = lasm_assembler.current_namespace,
+                          .name = *token};
+      hh_darray_append(&lasm_assembler.current_namespace->childs, &temp);
+      lasm_assembler.current_namespace = hh_darray_get_end_reference(&lasm_assembler.current_namespace->childs);
+      hh_darray_init(&lasm_assembler.current_namespace->childs, sizeof(namespace_t));
+      hh_darray_init(&lasm_assembler.current_namespace->labels, sizeof(label_t));
       hh_darray_pop(tokens, 0, 0); // Consume curly brace open
     }
     else if(token->id == CBRAC_C){
       // Handle '}' token
-      lasm_assembler.current_namespace = (namespace_t *)lasm_assembler.current_namespace->parent;
+      namespace_t* upper_ns = (namespace_t *)lasm_assembler.current_namespace->parent;
+      if(!lasm_assembler.current_namespace->constant){
+        hh_darray_deinit(&lasm_assembler.current_namespace->childs);
+        hh_darray_deinit(&lasm_assembler.current_namespace->labels);
+        hh_darray_remove_reference(&((namespace_t *)lasm_assembler.current_namespace->parent)->childs, lasm_assembler.current_namespace);
+      }
+      lasm_assembler.current_namespace = upper_ns;
       hh_darray_pop(tokens, 0, 0); // Consume curly brace close
     }
     else if(token->id == NUMBER || token->id == STRING_DB || token->id == RBRAC_C){
@@ -163,6 +160,7 @@ uint32_t get_size_of_file(FILE* file){
   fseek(file, current, SEEK_SET);
   return size;
 }
+
 //----------------------------------------------------------------------------
 uint8_t lasm_put_number_to_file(uint32_t number, FILE *output){
   if(number <= UINT8_MAX) fputc(number, output);
@@ -273,28 +271,99 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
     hh_bigint_resize(number, strlen(node->token.text));
     memcpy(number->data, node->token.text, strlen(node->token.text));
   }else if(node->token.id == WORD){
-    label_t *label = lasm_find_label_in_namespace(lasm_assembler.current_namespace, node->token.text);
-    if(label == NULL){
-      printf(TAG);
-      print_error_loc(&node->token);
-      printf("Undefined label: '%s'\n", node->token.text);
-      return ERR;
-    }
-    if(label->is_valid){
-      // Handle valid label
-      hh_bigint_set_uint32(number, label->value);
-      if(label->is_vector){
-        hh_bigint_normalize(number);
-      }else{
-        hh_bigint_resize(number, DEFAULT_ADDRESSING_SIZE);
-      }
-      return 0;
-    }else{
-      printf(TAG);
-      print_error_loc(&node->token);
-      printf("Invalid label: '%s'\n", node->token.text);
-      return ERR;
-    }
+    // TODO: Implement WORD token handling
+    printf(TAG);
+    print_error_loc(&node->token);
+    printf("Invalid label: '%s'\n", node->token.text);
+    return ERR;
   }
   return 0;
+}
+//-----------------------------------------------------------------------------
+label_t* lasm_find_label_reachable_namespace(namespace_t* namespace, const char* name){
+    // Check if name contains dot
+  if(strchr(name, '.') != NULL) {
+    // Split the name into base and sub
+    char base[MAX_TOKEN_SIZE];
+    char sub[MAX_TOKEN_SIZE];
+    for(int i = 0; i < MAX_TOKEN_SIZE; i++) {
+      if(name[i] == '.') {
+        base[i] = '\0';
+        strncpy(sub, &name[i + 1], MAX_TOKEN_SIZE - i - 1);
+        break;
+      }
+      base[i] = name[i];
+    }
+    for(size_t i = 0; i < hh_darray_get_item_fill(&namespace->childs); i++){
+      namespace_t *ns = hh_darray_get_reference(&namespace->childs, i);
+      if(strcmp(ns->name.text, base) == 0){
+        label_t *lower_label = lasm_find_label_reachable_namespace(ns, sub);
+        if(lower_label) return lower_label;
+      }
+    }
+  }
+  for(size_t i = 0; i < hh_darray_get_item_fill(&namespace->labels); i++){
+    label_t *label = hh_darray_get_reference(&namespace->labels, i);
+    if(strcmp(label->name.text, name) == 0) return label;
+  }
+  if(namespace->parent != NULL){
+    return lasm_find_label_reachable_namespace(namespace->parent, name);
+  }
+  return NULL;
+}
+
+//-----------------------------------------------------------------------------
+void print_indent(uint8_t level, FILE* out){
+  for(uint8_t i = 0; i < level; i++) fprintf(out, "  ");
+}
+//-----------------------------------------------------------------------------
+void lasm_export_json_namespace(namespace_t* ns, FILE* file, uint8_t indent_level){
+  // Opening brace
+  print_indent(indent_level, file);
+  fprintf(file, "{\n");
+  // Export namespace information
+  print_indent(indent_level + 1, file);
+  fprintf(file, "\"name\": \"%s\",\n", ns->name.text);
+
+  // Export constant property
+  print_indent(indent_level + 1, file);
+  fprintf(file, "\"constant\": %s,\n", ns->constant ? "true" : "false");
+
+  // Export level property
+  print_indent(indent_level + 1, file);
+  fprintf(file, "\"level\": %d,\n", ns->level);
+
+  // Export labels
+  print_indent(indent_level + 1, file);
+  fprintf(file, "\"labels\": [\n");
+  for (size_t i = 0; i < hh_darray_get_item_fill(&ns->labels); i++) {
+    label_t label;
+    hh_darray_get(&ns->labels, i, &label);
+    print_indent(indent_level + 2, file);
+    fprintf(file, "{\n");
+    print_indent(indent_level + 3, file);
+    fprintf(file, "\"name\": \"%s\",\n", label.name.text);
+    print_indent(indent_level + 3, file);
+    fprintf(file, "\"is_vector\": %s\n", label.is_vector ? "true" : "false");
+    print_indent(indent_level + 2, file);
+    fprintf(file, "}%s\n", i < hh_darray_get_item_fill(&ns->labels) - 1 ? "," : "");
+  }
+  print_indent(indent_level + 1, file);
+  fprintf(file, "],\n");
+
+  // Export child namespaces
+  print_indent(indent_level + 1, file);
+  fprintf(file, "\"children\": [\n");
+  for (size_t i = 0; i < hh_darray_get_item_fill(&ns->childs); i++) {
+    namespace_t* child = hh_darray_get_reference(&ns->childs, i);
+    lasm_export_json_namespace(child, file, indent_level + 2);
+    fprintf(file, "%s\n", i < hh_darray_get_item_fill(&ns->childs) - 1 ? "," : "");
+  }
+  print_indent(indent_level + 1, file);
+  fprintf(file, "]\n");
+
+  // Closing brace
+  print_indent(indent_level, file);
+  fprintf(file, "}");
+
 }
