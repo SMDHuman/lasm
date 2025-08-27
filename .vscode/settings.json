@@ -10,6 +10,7 @@
     "hh_darray.h": "c",
     "hh_argparse.h": "c",
     "hh_bigint.h": "c",
-    "stdlib.h": "c"
+    "stdlib.h": "c",
+    "stdio.h": "c"
   }
 }

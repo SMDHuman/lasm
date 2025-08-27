@@ -34,6 +34,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   //...
   token_t *token = hh_darray_get_reference(tokens, 0);
   while(hh_darray_get_fill(tokens) > 0){
+    //====================================
     if(token->id == WORD){
       // Handle word token
       token_t *next_token = hh_darray_get_reference(tokens, 1);
@@ -80,6 +81,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         }
       }
     }
+    //====================================
     else if(token->id == CBRAC_O){
       // Handle '{' token
       namespace_t temp = {.constant = 0,
@@ -92,6 +94,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       hh_darray_init(&lasm_assembler.current_namespace->labels, sizeof(label_t));
       hh_darray_pop(tokens, 0, 0); // Consume curly brace open
     }
+    //====================================
     else if(token->id == CBRAC_C){
       // Handle '}' token
       namespace_t* upper_ns = (namespace_t *)lasm_assembler.current_namespace->parent;
@@ -102,8 +105,8 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       lasm_assembler.current_namespace = upper_ns;
       hh_darray_pop(tokens, 0, 0); // Consume curly brace close
     }
+    //====================================
     else if(token->id == NUMBER || token->id == STRING_DB || token->id == RBRAC_C){
-      //TODO: Implement the evaluation of expressions
       expression_t expression;
       if(parser_expression(tokens, &expression) == ERR) return ERR;
       hh_bigint_t value; hh_bigint_init(&value, 0);
@@ -111,13 +114,13 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       fwrite(value.data, value.size, 1, lasm_assembler.output_file);
       parser_expression_deinit(&expression);
     }
+    //====================================
     // Vector with no name
     else if(token->id == SBRAC_O){
       if(lasm_is_lineend_id(tokens, 0, COLON)){
         // Handle vector token
         hh_darray_pop(tokens, 0, 0); // Consume open bracket
         //...
-        //TODO: Implement the evaluation of expressions
         expression_t expression;
         if(parser_expression(tokens, &expression) == ERR) return ERR;
         print_expression_tree(expression.root);printf("\n");
@@ -137,21 +140,16 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         return ERR;
       }
     }
+    //====================================
     else{
       printf(TAG);
       print_error_loc(token);
       printf("Unexpected token: %s\n", token->text);
       return ERR;
     }
+    //==========================================================
     // Expect newline
-    if(token->id == NEWLINE){
-      hh_darray_pop(tokens, 0, 0);
-    }else {
-      printf(TAG);
-      print_error_loc(token);
-      printf("Expected newline but got '%s'\n", token->text);
-      return ERR;
-    }
+    lasm_expect_and_skip_id(tokens, NEWLINE);
   }
   // =====================
   // Backwards patches
