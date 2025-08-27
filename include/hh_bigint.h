@@ -5,7 +5,7 @@
 // functions return 255 on failure
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 25.08.2025
+// Last Update	: 27.08.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_BIGINT_H
 #define HH_BIGINT_H
@@ -20,7 +20,33 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
+//-----------------------------------------------------------------------------
+#ifdef HH_BIGINT_SHORT_PREFIX
+#define hbi_init hh_bigint_init
+#define hbi_deinit hh_bigint_deinit
+#define hbi_resize hh_bigint_resize
+#define hbi_set_zero hh_bigint_set_zero
+#define hbi_set_int32 hh_bigint_set_int32
+#define hbi_set_uint32 hh_bigint_set_uint32
+#define hbi_set_uint16 hh_bigint_set_uint16
+#define hbi_set_buffer hh_bigint_set_buffer
+#define hbi_set_at hh_bigint_set_at
+#define hbi_get_at hh_bigint_get_at
+#define hbi_print hh_bigint_print
+#define hbi_print_hex hh_bigint_print_hex
+#define hbi_add_int32 hh_bigint_add_int32
+#define hbi_subtract_int32 hh_bigint_subtract_int32
+#define hbi_add hh_bigint_add
+#define hbi_subtract hh_bigint_subtract
+#define hbi_is_bigger hh_bigint_is_bigger
+#define hbi_is_smaller hh_bigint_is_smaller
+#define hbi_is_equal hh_bigint_is_equal
+#define hbi_copy hh_bigint_copy
+#define hbi_convert_from_string hh_bigint_convert_from_string
+#define hbi_multiply hh_bigint_multiply
+#define hbi_normalize hh_bigint_normalize
+#endif
+//-----------------------------------------------------------------------------
 // Big integer structure
 typedef struct {
     uint8_t *data;     // Pointer to the data

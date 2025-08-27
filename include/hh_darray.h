@@ -29,7 +29,7 @@ typedef struct hh_darray_t{
 	void *data; // Data buffer location 	
 }hh_darray_t;
 
-#ifdef HH_DARRAY_SORT_PREFIX
+#ifdef HH_DARRAY_SHORT_PREFIX
 #define hda_init hh_darray_init
 #define hda_deinit hh_darray_deinit
 #define hda_append hh_darray_append
