@@ -4,7 +4,7 @@
 // implement the functions of the library
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 25.08.2025
+// Last Update	: 27.08.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_DARRAY_INIT_SIZE
 #define HH_DARRAY_INIT_SIZE 16
@@ -44,6 +44,7 @@ typedef struct hh_darray_t{
 #define hda_is_inside hh_darray_is_inside
 #define hda_get_reference hh_darray_get_reference
 #define hda_get_end_reference hh_darray_get_end_reference
+#define hda_remove_reference hh_darray_remove_reference
 #define hda_clear hh_darray_clear
 #endif
 
@@ -165,6 +166,7 @@ void hh_darray_clear(hh_darray_t* array);
 			hh_darray_get(array, i-1, buffer);
 			hh_darray_set(array, i, buffer);
 		}
+		free(buffer);
 		hh_darray_set(array, index, item);	
 	}
 	//-----------------------------------------------------------------------------
@@ -175,6 +177,7 @@ void hh_darray_clear(hh_darray_t* array);
 			hh_darray_get(array, i+1, buffer);
 			hh_darray_set(array, i, buffer);
 		}
+		free(buffer);
 		hh_darray_popend(array, 0);
 	}
 	//-----------------------------------------------------------------------------
@@ -205,6 +208,7 @@ void hh_darray_clear(hh_darray_t* array);
 			hh_darray_get(array, i, array_item);
 			if(memcmp(array_item, item, array->word) == 0) return i;
 		}
+		free(array_item);
 		return -1;
 	}
 	//-----------------------------------------------------------------------------

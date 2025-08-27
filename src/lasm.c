@@ -27,14 +27,20 @@ FILE *input_file;
 //-----------------------------------------------------------------------------
 int main(int argc, char *argv[]){
   // Parse Arguments
+  hh_darray_init(&include_paths, sizeof(char*));
   if(parse_arguments(argc, argv) == ERR) return 0;
   
   //====================================
+  input_file = fopen(argv[1], "r");
+  if(input_file == NULL){
+    printf("[ERROR] No file found named '%s'\n", argv[1]);
+    return 0;
+  }
   // Tokenize input file
   hh_darray_init(&tokens, sizeof(token_t));
   if(lasm_tokenize(input_file, argv[1], &tokens) == ERR) return 0;
+  fclose(input_file);
   // Find and apply includes
-  hh_darray_t include_paths; hh_darray_init(&include_paths, sizeof(char*));
   if(lasm_find_apply_includes(&tokens, &include_paths) == ERR) return 0;
   // Extract macros
   hh_darray_t macros; hh_darray_init(&macros, sizeof(hh_darray_t));
@@ -109,13 +115,7 @@ uint8_t parse_arguments(int argc, char *argv[]){
     printf("[ERROR] no input file\n");
       return 0;
   }
-  // Parse and extract include paths
-  hh_darray_init(&include_paths, sizeof(size_t));
-  input_file = fopen(argv[1], "r");
-  if(input_file == NULL){
-    printf("[ERROR] No file found named '%s'\n", argv[1]);
-    return 0;
-  }
+  //...
   char *path = extract_folder_path(argv[1]);
   hh_darray_append(&include_paths, &path);
   // Parse output file name if there is any

@@ -168,15 +168,15 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 	for(uint32_t i = 0; i < hh_darray_get_item_fill(tokens); i++){
 		token_t *token = hh_darray_get_reference(tokens, i);
 		if(token->id == WORD || token->id == MACRO_ARG){
-			hh_darray_t macro_tokens;
-			hh_darray_t macro_arg_macros; hh_darray_init(&macro_arg_macros, sizeof(hh_darray_t)); 
-			uint8_t store_arguments = 1;
-			uint32_t push_count = 0;
-			if(lasm_find_and_get_macro(token, macros, &macro_tokens)){
+			hh_darray_t *macro_tokens = lasm_find_and_get_macro(token, macros); 
+			if(macro_tokens){
+				hh_darray_t macro_arg_macros; hh_darray_init(&macro_arg_macros, sizeof(hh_darray_t)); 
+				uint8_t store_arguments = 1;
+				uint32_t push_count = 0;
 				// Apply macro tokens
 				hh_darray_pop(tokens, i, 0); // Consume macro name
-				for(uint32_t j = 1; j < hh_darray_get_item_fill(&macro_tokens); j++){
-					token_t macro_token; hh_darray_get(&macro_tokens, j, &macro_token);
+				for(uint32_t j = 1; j < hh_darray_get_item_fill(macro_tokens); j++){
+					token_t macro_token; hh_darray_get(macro_tokens, j, &macro_token);
 					// Store macro agruments
 					if(macro_token.id == MACRO_ARG && store_arguments){
 						hh_darray_append(&macro_arg_macros, 0);
@@ -190,11 +190,11 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 						hh_darray_pop(tokens, i, 0); // Consume comma token
 					}else{
 						store_arguments = 0;
-						hh_darray_t macro_arg_tokens;
-						if(lasm_find_and_get_macro(&macro_token, &macro_arg_macros, &macro_arg_tokens)){
+						hh_darray_t *macro_arg_tokens = lasm_find_and_get_macro(&macro_token, &macro_arg_macros);
+						if(macro_arg_tokens){
 							// Apply macro argument tokens
-							for(uint32_t k = 1; k < hh_darray_get_item_fill(&macro_arg_tokens); k++){
-								token_t arg_token; hh_darray_get(&macro_arg_tokens, k, &arg_token);
+							for(uint32_t k = 1; k < hh_darray_get_item_fill(macro_arg_tokens); k++){
+								token_t arg_token; hh_darray_get(macro_arg_tokens, k, &arg_token);
 								hh_darray_push(tokens, i + push_count++, &arg_token);
 							}
 						}else{
@@ -214,15 +214,13 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 	return 0;
 }
 //-----------------------------------------------------------------------------
-uint8_t lasm_find_and_get_macro(token_t *token, hh_darray_t *macros, hh_darray_t *macro_tokens){
+hh_darray_t * lasm_find_and_get_macro(token_t *token, hh_darray_t *macros){
 	for(uint32_t i = 0; i < hh_darray_get_item_fill(macros); i++){
-		hh_darray_t macro; hh_darray_get(macros, i, &macro);
-		token_t m_label; hh_darray_get(&macro, 0, &m_label);
-		if(m_label.id == token->id){
-			if(strcmp(m_label.text, token->text) == 0){
-				// Copy macro tokens
-				memcpy(macro_tokens, &macro, sizeof(hh_darray_t));
-				return 1;
+		hh_darray_t* macro = hh_darray_get_reference(macros, i);
+		token_t* m_label = hh_darray_get_reference(macro, 0);
+		if(m_label->id == token->id){
+			if(strcmp(m_label->text, token->text) == 0){
+				return macro;
 			}
 		}
 	}

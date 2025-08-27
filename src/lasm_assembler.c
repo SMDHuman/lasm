@@ -96,8 +96,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       // Handle '}' token
       namespace_t* upper_ns = (namespace_t *)lasm_assembler.current_namespace->parent;
       if(!lasm_assembler.current_namespace->constant){
-        hh_darray_deinit(&lasm_assembler.current_namespace->childs);
-        hh_darray_deinit(&lasm_assembler.current_namespace->labels);
+        lasm_namespace_deinit(lasm_assembler.current_namespace);
         hh_darray_remove_reference(&((namespace_t *)lasm_assembler.current_namespace->parent)->childs, lasm_assembler.current_namespace);
       }
       lasm_assembler.current_namespace = upper_ns;
@@ -400,9 +399,8 @@ void lasm_export_json_namespace(namespace_t* ns, FILE* file, uint8_t indent_leve
 //-----------------------------------------------------------------------------
 uint8_t lasm_namespace_deinit(namespace_t *namespace){
   for(size_t i = 0; i < hh_darray_get_item_fill(&namespace->labels); i++){
-    label_t label;
-    hh_darray_get(&namespace->labels, i, &label);
-    lasm_label_deinit(&label);
+    label_t* label = hh_darray_get_reference(&namespace->labels, i);
+    lasm_label_deinit(label);
   }
   hh_darray_deinit(&namespace->labels);
   for(size_t i = 0; i < hh_darray_get_item_fill(&namespace->childs); i++){
