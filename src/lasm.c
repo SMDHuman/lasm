@@ -7,6 +7,8 @@
 #define HH_BIGINT_IMPLEMENTATION
 #define INITIAL_CAPACITY 1
 #include "hh_bigint.h"
+#define HH_ARGPARSE_IMPLEMENTATION
+#include "hh_argparse.h"
 
 #include "lasm_tokenizer.h"
 #include "lasm_macro.h"
@@ -16,35 +18,39 @@
 #include "cpu/6502.c"
 
 //-----------------------------------------------------------------------------
-uint8_t parse_arguments(int argc, char *argv[]);
-uint8_t get_arg_index(int argc, char *argv[], const char word[]);
 char* extract_folder_path(const char* path);
 hh_darray_t tokens;
-hh_darray_t include_paths;
-char output_name[MAX_TOKEN_SIZE];
-FILE *input_file;
 
 //-----------------------------------------------------------------------------
 int main(int argc, char *argv[]){
   // Parse Arguments
-  hh_darray_init(&include_paths, sizeof(char*));
-  if(parse_arguments(argc, argv) == ERR) return 0;
-  
-  //====================================
-  input_file = fopen(argv[1], "r");
+  hh_argparse_t *parser = hh_argparse_init(argc, argv);
+  if(parser == NULL){
+    printf("[ERROR] Argument parsing failed\n");
+    return 1;
+  }
+  hh_darray_t include_paths; hh_darray_init(&include_paths, sizeof(char*));
+  char *input_file_path = hh_argparse_get_positional(parser, 0);
+  FILE *input_file = fopen(input_file_path, "r");
   if(input_file == NULL){
-    printf("[ERROR] No file found named '%s'\n", argv[1]);
+    printf("[ERROR] No file found named '%s'\n", input_file_path);
     return 0;
   }
+  
+  //====================================
   // Tokenize input file
   hh_darray_init(&tokens, sizeof(token_t));
-  if(lasm_tokenize(input_file, argv[1], &tokens) == ERR) return 0;
+  printf("Tokenizing %s\n", input_file_path);
+  if(lasm_tokenize(input_file, input_file_path, &tokens) == ERR) return 0;
   fclose(input_file);
   // Find and apply includes
+  printf("Finding and applying includes...\n");
   if(lasm_find_apply_includes(&tokens, &include_paths) == ERR) return 0;
   // Extract macros
   hh_darray_t macros; hh_darray_init(&macros, sizeof(hh_darray_t));
+  printf("Extracting macros...\n");
   if(lasm_extract_macros(&tokens, &macros) == ERR) return ERR;
+  printf("Extracted %zu macros\n", hh_darray_get_item_fill(&macros));
   // Apply macros main tokens
   if(lasm_apply_macros(&tokens, &macros) == ERR) return ERR;
   if(lasm_newline_after_branches(&tokens) == ERR) return ERR;
@@ -52,14 +58,14 @@ int main(int argc, char *argv[]){
   //print_tokens_as_code(&tokens);
   //====================================
   // Parse selected cpu and assemble tokens
-  uint8_t cpu_i = get_arg_index(argc, argv, "-m"); // Machine cpu name
-  if(cpu_i){
-    if(strcmp(argv[cpu_i+1], "6502") == 0){
+  char* cpu = hh_argparse_get_op_short(parser, 'm');
+  if(cpu){
+    if(strcmp(cpu, "6502") == 0){
       printf("Assembling for 6502...\n");
       lasm_6502_init();
       lasm_assembler.machine_assemble = lasm_6502_assemble;
     }else{
-      printf("[ERROR] Machine named '%s' not found\n", argv[cpu_i+1]);
+      printf("[ERROR] Machine named '%s' not found\n", cpu);
       return 0;
     }
   }else{
@@ -69,7 +75,12 @@ int main(int argc, char *argv[]){
   //====================================
 
   // Assemble tokens
+  char* output_name = hh_argparse_get_op_short(parser, 'o');
+  if(!output_name){
+    output_name = "a.out";
+  }
   FILE *output = fopen(output_name, "w+");
+  printf("Assembling to %s\n", output_name);
   if(lasm_assemble(&tokens, output) == ERR){
     printf("[ERROR] Assembling failed\n");
     //print_tokens_as_code(&tokens);
@@ -105,34 +116,8 @@ int main(int argc, char *argv[]){
   
   lasm_namespace_deinit(&lasm_assembler.global_namespace);
   hh_darray_deinit(&lasm_assembler.backward_patches);
+  hh_argparse_deinit(parser);
   printf("Done!\n");
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
-uint8_t parse_arguments(int argc, char *argv[]){
-  if(argc < 2){
-    printf("[ERROR] no input file\n");
-      return 0;
-  }
-  //...
-  char *path = extract_folder_path(argv[1]);
-  hh_darray_append(&include_paths, &path);
-  // Parse output file name if there is any
-  uint8_t out_i = get_arg_index(argc, argv, "-o"); // Output file name
-  memset(output_name, 0, sizeof(output_name));
-  if(out_i) strcat(output_name, argv[out_i+1]);
-  else strcat(output_name, "a.out");
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
-uint8_t get_arg_index(int argc, char *argv[], const char word[]){
-  for(uint8_t i = 0; i < argc-1; i++){
-    if(strcmp(argv[i], word) == 0){
-      return(i);
-    }
-  }
   return 0;
 }
 

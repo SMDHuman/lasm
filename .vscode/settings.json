@@ -7,6 +7,8 @@
     "lasm_tokenizer.h": "c",
     "compare": "c",
     "lasm_macro.h": "c",
-    "hh_darray.h": "c"
+    "hh_darray.h": "c",
+    "hh_argparse.h": "c",
+    "hh_bigint.h": "c"
   }
 }
