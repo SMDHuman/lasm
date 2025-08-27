@@ -9,7 +9,6 @@
 //-----------------------------------------------------------------------------
 assembler_t lasm_assembler;
 
-static uint32_t get_size_of_file(FILE* file);
 static const char TAG[] = "[ASMB]";
 
 //-----------------------------------------------------------------------------
@@ -50,7 +49,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         hh_darray_pop(tokens, 0, 0); // Consume name
         hh_darray_pop(tokens, 0, 0); // Consume curly brace open
       }
-      else if(is_lineend_token_id(tokens, 0, COLON)){
+      else if(lasm_is_lineend_id(tokens, 0, COLON)){
         hh_darray_append(&lasm_assembler.current_namespace->labels, 0); 
         label_t* new_label = hh_darray_get_end_reference(&lasm_assembler.current_namespace->labels);
         new_label->name = *token;
@@ -59,14 +58,14 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
           hh_darray_pop(tokens, 0, 0); // Consume name
           hh_darray_pop(tokens, 0, 0); // Consume square brace open
           if(parser_expression(tokens, &new_label->expression) == ERR) return ERR;
-          if(lasm_expect_and_skip(tokens, SBRAC_C) == ERR) return ERR;
-          if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
+          if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
+          if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
         }
         else{
           hh_darray_pop(tokens, 0, 0); // Consume name
-          if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
+          if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
           new_label->is_vector = 0;
-          new_label->value = get_size_of_file(lasm_assembler.output_file);
+          new_label->value = lasm_get_file_size();
           new_label->is_evaluated = 1;
         }
       }
@@ -111,10 +110,11 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       hh_bigint_t value; hh_bigint_init(&value, 0);
       if(lasm_evaluate_expression_tree(expression.root, &value) == ERR) return ERR;
       fwrite(value.data, value.size, 1, lasm_assembler.output_file);
+      parser_expression_deinit(&expression);
     }
     // Vector with no name
     else if(token->id == SBRAC_O){
-      if(is_lineend_token_id(tokens, 0, COLON)){
+      if(lasm_is_lineend_id(tokens, 0, COLON)){
         // Handle vector token
         hh_darray_pop(tokens, 0, 0); // Consume open bracket
         //...
@@ -123,14 +123,14 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         if(parser_expression(tokens, &expression) == ERR) return ERR;
         print_expression_tree(expression.root);printf("\n");
         hh_bigint_t value; hh_bigint_init(&value, 0);
-        lasm_evaluate_expression_tree(expression.root, &value);
-        hh_bigint_print_hex(&value);
         // Evaluate expression
+        if(lasm_evaluate_expression_tree(expression.root, &value) == ERR) return ERR;
+        parser_expression_deinit(&expression);
         //uint32_t value;// = lasm_evaluate_expression(&expression, output);
         ////...
-        if(lasm_expect_and_skip(tokens, SBRAC_C) == ERR) return ERR;
+        if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
         //fseek(output, value, SEEK_SET);
-        if(lasm_expect_and_skip(tokens, COLON) == ERR) return ERR;
+        if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
       }else{
         printf(TAG);
         print_error_loc(token);
@@ -161,12 +161,17 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
 }
 
 //-----------------------------------------------------------------------------
-uint32_t get_size_of_file(FILE* file){
-  uint32_t current = ftell(file);
-  fseek(file, 0, SEEK_END);
-  uint32_t size = ftell(file);
-  fseek(file, current, SEEK_SET);
+size_t lasm_get_file_size(){
+  size_t current = ftell(lasm_assembler.output_file);
+  fseek(lasm_assembler.output_file, 0, SEEK_END);
+  size_t size = ftell(lasm_assembler.output_file);
+  fseek(lasm_assembler.output_file, current, SEEK_SET);
   return size;
+}
+
+//----------------------------------------------------------------------------
+size_t lasm_get_file_cursor(){
+  return ftell(lasm_assembler.output_file);
 }
 
 //----------------------------------------------------------------------------
@@ -204,7 +209,7 @@ uint8_t lasm_token_to_number(token_t *token, hh_bigint_t *number){
   return 0;    
 }
 //-----------------------------------------------------------------------------
-uint8_t lasm_expect(hh_darray_t *tokens, TOKEN_ID expected){
+uint8_t lasm_expect_id(hh_darray_t *tokens, TOKEN_ID expected){
   if(hh_darray_get_fill(tokens) == 0) return ERR;
   token_t *token = hh_darray_get_reference(tokens, 0);
   if(token->id != expected){
@@ -217,7 +222,7 @@ uint8_t lasm_expect(hh_darray_t *tokens, TOKEN_ID expected){
   return 0;
 }
 //-----------------------------------------------------------------------------
-uint8_t lasm_expect_and_skip(hh_darray_t *tokens, TOKEN_ID expected){
+uint8_t lasm_expect_and_skip_id(hh_darray_t *tokens, TOKEN_ID expected){
   if(hh_darray_get_fill(tokens) == 0) return ERR;
   token_t *token = hh_darray_get_reference(tokens, 0);
   if(token->id != expected){
@@ -229,7 +234,26 @@ uint8_t lasm_expect_and_skip(hh_darray_t *tokens, TOKEN_ID expected){
   hh_darray_pop(tokens, 0, 0);
   return 0;
 }
-
+//-----------------------------------------------------------------------------
+uint8_t lasm_is_lineend_id(hh_darray_t *tokens, uint32_t index, TOKEN_ID id){
+  token_t *token = hh_darray_get_reference(tokens, index);
+  uint32_t i;
+  for(i = index + 1; token->id != NEWLINE; i++){
+    token = hh_darray_get_reference(tokens, i);
+  }
+  token = hh_darray_get_reference(tokens, i-2);
+  return token->id == id ? 1 : 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t lasm_is_lineend_text(hh_darray_t *tokens, uint32_t index, const char* text){
+  token_t *token = hh_darray_get_reference(tokens, index);
+  uint32_t i;
+  for(i = index + 1; token->id != NEWLINE; i++){
+    token = hh_darray_get_reference(tokens, i);
+  }
+  token = hh_darray_get_reference(tokens, i-2);
+  return strcmp(token->text, text) == 0 ? 1 : 0;
+}
 //-----------------------------------------------------------------------------
 uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *number){
   if(node == NULL) return 0; // No expression to evaluate
@@ -321,63 +345,75 @@ label_t* lasm_find_label_reachable_namespace(namespace_t* namespace, const char*
 }
 
 //-----------------------------------------------------------------------------
-void print_indent(uint8_t level, FILE* out){
-  for(uint8_t i = 0; i < level; i++) fprintf(out, "  ");
-}
-//-----------------------------------------------------------------------------
 void lasm_export_json_namespace(namespace_t* ns, FILE* file, uint8_t indent_level){
+  static char indent[256]; memset(indent, ' ', 256);
+  static const uint8_t indent_size = 2;
   // Opening brace
-  print_indent(indent_level, file);
+  fwrite(indent, 1, indent_level*indent_size, file);
   fprintf(file, "{\n");
   // Export namespace information
-  print_indent(indent_level + 1, file);
+  fwrite(indent, 1, (indent_level + 1)*indent_size, file);
   fprintf(file, "\"name\": \"%s\",\n", ns->name.text);
-
   // Export constant property
-  print_indent(indent_level + 1, file);
+  fwrite(indent, 1, (indent_level + 1)*indent_size, file);
   fprintf(file, "\"constant\": %s,\n", ns->constant ? "true" : "false");
-
   // Export level property
-  print_indent(indent_level + 1, file);
+  fwrite(indent, 1, (indent_level + 1)*indent_size, file);
   fprintf(file, "\"level\": %d,\n", ns->level);
-
   // Export labels
-  print_indent(indent_level + 1, file);
+  fwrite(indent, 1, (indent_level + 1)*indent_size, file);
   fprintf(file, "\"labels\": [\n");
   for (size_t i = 0; i < hh_darray_get_item_fill(&ns->labels); i++) {
     label_t label;
     hh_darray_get(&ns->labels, i, &label);
-    print_indent(indent_level + 2, file);
+    fwrite(indent, 1, (indent_level + 2)*indent_size, file);
     fprintf(file, "{\n");
-    print_indent(indent_level + 3, file);
+    fwrite(indent, 1, (indent_level + 3)*indent_size, file);
     fprintf(file, "\"name\": \"%s\",\n", label.name.text);
-    print_indent(indent_level + 3, file);
+    fwrite(indent, 1, (indent_level + 3)*indent_size, file);
     fprintf(file, "\"is_vector\": %s", label.is_vector ? "true" : "false");
     if(label.is_evaluated){
       fprintf(file, ",\n");
-      print_indent(indent_level + 3, file);
+      fwrite(indent, 1, (indent_level + 3)*indent_size, file);
       fprintf(file, "\"value\": %ld", label.value);
     }
     fprintf(file, "\n");
-    print_indent(indent_level + 2, file);
+    fwrite(indent, 1, (indent_level + 2)*indent_size, file);
     fprintf(file, "}%s\n", i < hh_darray_get_item_fill(&ns->labels) - 1 ? "," : "");
   }
-  print_indent(indent_level + 1, file);
+  fwrite(indent, 1, (indent_level + 1)*indent_size, file);
   fprintf(file, "],\n");
-
   // Export child namespaces
-  print_indent(indent_level + 1, file);
+  fwrite(indent, 1, (indent_level + 1)*indent_size, file);
   fprintf(file, "\"children\": [\n");
   for (size_t i = 0; i < hh_darray_get_item_fill(&ns->childs); i++) {
     namespace_t* child = hh_darray_get_reference(&ns->childs, i);
     lasm_export_json_namespace(child, file, indent_level + 2);
     fprintf(file, "%s\n", i < hh_darray_get_item_fill(&ns->childs) - 1 ? "," : "");
   }
-  print_indent(indent_level + 1, file);
+  fwrite(indent, 1, (indent_level + 1)*indent_size, file);
   fprintf(file, "]\n");
-
   // Closing brace
-  print_indent(indent_level, file);
+  fwrite(indent, 1, indent_level*indent_size, file);
   fprintf(file, "}");
-
+}
+//-----------------------------------------------------------------------------
+uint8_t lasm_namespace_deinit(namespace_t *namespace){
+  for(size_t i = 0; i < hh_darray_get_item_fill(&namespace->labels); i++){
+    label_t label;
+    hh_darray_get(&namespace->labels, i, &label);
+    lasm_label_deinit(&label);
+  }
+  hh_darray_deinit(&namespace->labels);
+  for(size_t i = 0; i < hh_darray_get_item_fill(&namespace->childs); i++){
+    namespace_t* child = hh_darray_get_reference(&namespace->childs, i);
+    lasm_namespace_deinit(child);
+  }
+  hh_darray_deinit(&namespace->childs);
+  return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t lasm_label_deinit(label_t *label){
+  parser_expression_deinit(&label->expression);
+  return 0;
 }

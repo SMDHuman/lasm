@@ -44,7 +44,11 @@ uint8_t parser_expression(hh_darray_t *tokens, expression_t *expr){
   }
   return 0;
 }
-
+//-----------------------------------------------------------------------------
+uint8_t parser_expression_deinit(expression_t *expr){
+  hh_darray_deinit(&expr->expression_tree_buffer);
+  return 0;
+}
 //-----------------------------------------------------------------------------
 expression_tree_t* parser_expression_right(hh_darray_t *tokens, expression_t *expr, int32_t precedence){
   if(hh_darray_get_fill(tokens) == 0) return NULL; // No tokens to parse

@@ -20,7 +20,6 @@ uint8_t parse_arguments(int argc, char *argv[]);
 uint8_t get_arg_index(int argc, char *argv[], const char word[]);
 char* extract_folder_path(const char* path);
 hh_darray_t tokens;
-hh_darray_t byte_out;
 hh_darray_t include_paths;
 char output_name[MAX_TOKEN_SIZE];
 FILE *input_file;
@@ -35,6 +34,7 @@ int main(int argc, char *argv[]){
   hh_darray_init(&tokens, sizeof(token_t));
   if(lasm_tokenize(input_file, argv[1], &tokens) == ERR) return 0;
   // Find and apply includes
+  hh_darray_t include_paths; hh_darray_init(&include_paths, sizeof(char*));
   if(lasm_find_apply_includes(&tokens, &include_paths) == ERR) return 0;
   // Extract macros
   hh_darray_t macros; hh_darray_init(&macros, sizeof(hh_darray_t));
@@ -78,10 +78,28 @@ int main(int argc, char *argv[]){
   fclose(json);
 
   //...
-  printf("Done!\n");
   hh_darray_deinit(&tokens);
+  
+  // Free each macro in the macros array
+  for(size_t i = 0; i < hh_darray_get_item_fill(&macros); i++) {
+    hh_darray_t macro;
+    hh_darray_get(&macros, i, &macro);
+    hh_darray_deinit(&macro);
+    // Free the allocated macro_tokens if any
+  }
   hh_darray_deinit(&macros);
+  
+  // Free path strings before deinit
+  for(size_t i = 0; i < hh_darray_get_item_fill(&include_paths); i++) {
+    char *path;
+    hh_darray_get(&include_paths, i, &path);
+    free(path);
+  }
   hh_darray_deinit(&include_paths);
+  
+  lasm_namespace_deinit(&lasm_assembler.global_namespace);
+  hh_darray_deinit(&lasm_assembler.backward_patches);
+  printf("Done!\n");
   return 0;
 }
 

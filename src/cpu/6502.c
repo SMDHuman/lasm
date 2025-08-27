@@ -181,8 +181,8 @@ uint8_t lasm_6502_assemble(void){
   }
   // Indirect mode
   else if(token->id == RBRAC_O && 
-          (is_lineend_token_id(lasm_assembler.tokens, 0, RBRAC_C) || 
-          is_lineend_token_text(lasm_assembler.tokens, 0, "Y"))){
+          (lasm_is_lineend_id(lasm_assembler.tokens, 0, RBRAC_C) || 
+          lasm_is_lineend_text(lasm_assembler.tokens, 0, "Y"))){
     addr_mode = ADM_IND;
     hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume '('
   }

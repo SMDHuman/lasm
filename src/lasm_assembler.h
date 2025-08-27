@@ -20,6 +20,7 @@ typedef struct{
   hh_darray_t childs; // list of namespace_t
   void *parent; // Parent namespace for nested namespaces
 }namespace_t;
+uint8_t lasm_namespace_deinit(namespace_t *namespace);
 
 typedef struct{
   token_t name;
@@ -28,6 +29,7 @@ typedef struct{
   uint8_t is_vector; // Whether the label changes the address pointer
   uint8_t is_evaluated; // Whether the label value has been evaluated
 }label_t;
+uint8_t lasm_label_deinit(label_t *label);
 
 typedef struct{
   uint8_t addressing_size; // Size of label in bytes
@@ -44,11 +46,15 @@ extern assembler_t lasm_assembler;
 
 // Function to assemble the code
 uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output);
+size_t lasm_get_file_size();
+size_t lasm_get_file_cursor();
 uint8_t lasm_token_to_number(token_t *token, hh_bigint_t *number);
 uint8_t lasm_put_bytes_to_file(hh_darray_t* bytes, FILE *output);
 uint8_t lasm_put_number_to_file(uint32_t number, FILE *output);
-uint8_t lasm_expect_and_skip(hh_darray_t *tokens, TOKEN_ID expected);
-uint8_t lasm_expect(hh_darray_t *tokens, TOKEN_ID expected);
+uint8_t lasm_expect_id(hh_darray_t *tokens, TOKEN_ID expected);
+uint8_t lasm_expect_and_skip_id(hh_darray_t *tokens, TOKEN_ID expected);
+uint8_t lasm_is_lineend_id(hh_darray_t *tokens, uint32_t index, TOKEN_ID id);
+uint8_t lasm_is_lineend_text(hh_darray_t *tokens, uint32_t index, const char* text);
 uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *number);
 void lasm_export_json_namespace(namespace_t* ns, FILE* file, uint8_t indent_level);
 label_t* lasm_find_label_reachable_namespace(namespace_t* namespace, const char* name);

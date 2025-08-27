@@ -49,6 +49,7 @@ uint8_t lasm_find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths
 						hh_darray_get(&include_tokens, j, &token);				
 						hh_darray_push(tokens, i-2+j, &token);					
 					}
+					hh_darray_deinit(&include_tokens);
 				}
 			}
 			if(macro_inside == 0) macro_size = 0;
@@ -200,6 +201,10 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 							hh_darray_push(tokens, i + push_count++, &macro_token);
 						}
 					}
+				}
+				for(size_t i = 0; i < hh_darray_get_item_fill(&macro_arg_macros); i++) {
+					hh_darray_t *macro_arg_tokens = hh_darray_get_reference(&macro_arg_macros, i);
+					hh_darray_deinit(macro_arg_tokens);
 				}
 				hh_darray_deinit(&macro_arg_macros);
 				i--;

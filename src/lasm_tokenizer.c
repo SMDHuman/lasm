@@ -165,27 +165,6 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 	return 0;
 }
 //-----------------------------------------------------------------------------
-// Checks if the token before first newline equal to given id
-uint8_t is_lineend_token_id(hh_darray_t *tokens, uint32_t index, TOKEN_ID id){
-  token_t *token = hh_darray_get_reference(tokens, index);
-  uint32_t i;
-  for(i = index + 1; token->id != NEWLINE; i++){
-    token = hh_darray_get_reference(tokens, i);
-  }
-  token = hh_darray_get_reference(tokens, i-2);
-  return token->id == id ? 1 : 0;
-}
-//-----------------------------------------------------------------------------
-uint8_t is_lineend_token_text(hh_darray_t *tokens, uint32_t index, const char* text){
-  token_t *token = hh_darray_get_reference(tokens, index);
-  uint32_t i;
-  for(i = index + 1; token->id != NEWLINE; i++){
-    token = hh_darray_get_reference(tokens, i);
-  }
-  token = hh_darray_get_reference(tokens, i-2);
-  return strcmp(token->text, text) == 0 ? 1 : 0;
-}
-//-----------------------------------------------------------------------------
 uint8_t is_alpha(char c){
 	if(((uint8_t)c <= 90 && (uint8_t)c >= 65) || 
 	((uint8_t)c <= 122 && (uint8_t)c >= 97)) return 1;

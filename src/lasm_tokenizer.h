@@ -58,8 +58,6 @@ typedef struct{
 }token_t;
 
 uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens);
-uint8_t is_lineend_token_id(hh_darray_t *tokens, uint32_t index, TOKEN_ID id);
-uint8_t is_lineend_token_text(hh_darray_t *tokens, uint32_t index, const char* text);
 char char_upper(char c);
 char char_lower(char c);
 uint8_t is_alpha(char c);

@@ -23,6 +23,7 @@ typedef struct{
 } expression_t;
 
 uint8_t parser_expression(hh_darray_t *tokens, expression_t *expr);
+uint8_t parser_expression_deinit(expression_t *expr);
 expression_tree_t* parser_expression_right(hh_darray_t *tokens, expression_t *expr, int32_t precedence);
 void print_expression_tree(expression_tree_t *root);
 
