@@ -5,7 +5,7 @@ zp{
   c[2]:
 }
 
-start[256]:
+start[0x400]:
 // initialize 
 lda #1; sta zp.a
 
@@ -30,6 +30,6 @@ lda #1; sta zp.a
 HALT:
   clc; bcc HALT
 
-reset_vectors[0x200]:
-  0.[2];start;0.[2]
+reset_vectors[0xfffa]:
+  start;start;start
   
