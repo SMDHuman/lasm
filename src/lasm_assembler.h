@@ -35,7 +35,6 @@ typedef struct{
   uint8_t addressing_size; // Size of label in bytes
   hh_darray_t backward_patches; // Patches to apply after first pass
   namespace_t *current_namespace;
-  uint32_t unnamed_namespace_count;
   hh_darray_t *tokens; // Currently processing tokens
   FILE* output_file; // Output file for assembled code
   uint8_t (*machine_assemble)(void); // Function to assemble machine code
@@ -46,6 +45,7 @@ extern assembler_t lasm_assembler;
 
 // Function to assemble the code
 uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output);
+size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t *namespace);
 size_t lasm_get_file_size();
 size_t lasm_get_file_cursor();
 uint8_t lasm_token_to_number(token_t *token, hh_bigint_t *number);
@@ -57,6 +57,8 @@ uint8_t lasm_is_lineend_id(hh_darray_t *tokens, uint32_t index, TOKEN_ID id);
 uint8_t lasm_is_lineend_text(hh_darray_t *tokens, uint32_t index, const char* text);
 uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *number);
 void lasm_export_json_namespace(namespace_t* ns, FILE* file, uint8_t indent_level);
+label_t* lasm_find_label_in_namespace(namespace_t* namespace, const char* name);
 label_t* lasm_find_label_reachable_namespace(namespace_t* namespace, const char* name);
+namespace_t* lasm_find_namespace_reachable_namespace(namespace_t* namespace, const char* name);
 
 #endif // LASM_ASSEMBLER_H

@@ -11,6 +11,7 @@
     "hh_argparse.h": "c",
     "hh_bigint.h": "c",
     "stdlib.h": "c",
-    "stdio.h": "c"
+    "stdio.h": "c",
+    "type_traits": "c"
   }
 }

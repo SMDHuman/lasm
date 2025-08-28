@@ -8,14 +8,15 @@ zp{
     end[511]:
   }
 }
-
-macro_with_args 123+2, 412
+global:
+things[123]:
 
 {
 start[17+zp.stack.end]:
-start - 0xa
+start + 1
+global_out
+LABEL -1
 LABEL:
-LABEL+2
 2-(2+(1+(3+3)))*2+2
 0b11.(0x200[1*(3-2)]) + 2
 start
@@ -23,8 +24,10 @@ zp.c
 "Hello"+3
 zp.stack.end
 LABEL 
-macro
+macro_with_args 123+2, 412
 }
+
+global_out:
 
 <macro
 2*3.[5]

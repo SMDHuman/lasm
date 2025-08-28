@@ -5,7 +5,7 @@
 // functions return 255 on failure
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 27.08.2025
+// Last Update	: 28.08.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_BIGINT_H
 #define HH_BIGINT_H
@@ -63,6 +63,7 @@ uint8_t hh_bigint_set_int32(hh_bigint_t *bigint, const int32_t value);
 uint8_t hh_bigint_set_uint32(hh_bigint_t *bigint, const uint32_t value);
 uint8_t hh_bigint_set_uint16(hh_bigint_t *bigint, const uint16_t value);
 uint8_t hh_bigint_set_buffer(hh_bigint_t *bigint, const void *data, const size_t size);
+uint64_t hh_bigint_get_uint64(const hh_bigint_t *bigint);
 uint8_t hh_bigint_set_at(hh_bigint_t *bigint, const uint8_t value, const size_t index);
 uint8_t hh_bigint_get_at(const hh_bigint_t *bigint, const size_t index);
 uint8_t hh_bigint_print(const hh_bigint_t *bigint);
@@ -161,6 +162,15 @@ uint8_t hh_bigint_set_buffer(hh_bigint_t *bigint, const void *data, const size_t
         memset(&bigint->data[size], 0, bigint->size - size);
     }
     return 0;
+}
+//-----------------------------------------------------------------------------
+uint64_t hh_bigint_get_uint64(const hh_bigint_t *bigint){
+    if(bigint == NULL) return 0;
+    uint64_t value = 0;
+    for(size_t i = 0; i < 8; i++){
+        value |= ((uint64_t)hh_bigint_get_at(bigint, i) << (i * 8));
+    }
+    return value;
 }
 //-----------------------------------------------------------------------------
 uint8_t hh_bigint_set_at(hh_bigint_t *bigint, const uint8_t value, const size_t index){
