@@ -45,6 +45,8 @@ extern assembler_t lasm_assembler;
 
 // Function to assemble the code
 uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output);
+uint8_t lasm_eval_and_backward_patch_expression(uint8_t enable_skip);
+uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result, uint8_t enable_backward_patch, uint8_t is_relative, size_t max_size);
 size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t *namespace);
 size_t lasm_get_file_size();
 size_t lasm_get_file_cursor();

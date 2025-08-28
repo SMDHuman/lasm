@@ -31,7 +31,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   lasm_assembler.output_file = output;
   hh_darray_init(&lasm_assembler.backward_patches, sizeof(expression_t));
   //...
-  lasm_scout_namespace(tokens, 0, &lasm_assembler.global_namespace);
+  if(lasm_scout_namespace(tokens, 0, &lasm_assembler.global_namespace) == (size_t)-1) return ERR;
   //...
   token_t *token = hh_darray_get_reference(tokens, 0);
   while(hh_darray_get_fill(tokens) > 0){
@@ -58,17 +58,8 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
           if(find->is_vector){
             hh_darray_pop(tokens, 0, 0); // Consume name
             hh_darray_pop(tokens, 0, 0); // Consume square brace open
-            if(parser_expression(tokens, &find->expression) == ERR) return ERR;
-            print_expression_tree(find->expression.root);printf("\n");
             hh_bigint_t value; hh_bigint_init(&value, 0);
-            uint8_t res = lasm_evaluate_expression_tree(find->expression.root, &value);
-            if(res == ERR) return ERR;
-            if(res == 2){
-              printf(TAG);
-              print_error_loc(&find->expression.root->token);
-              printf("Expression evaluation failed. Vector must be declated with known values\n");
-              return ERR;
-            }
+            if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
             find->value = hh_bigint_get_uint64(&value);
             find->is_evaluated = 1;
             fseek(lasm_assembler.output_file, find->value, SEEK_SET);
@@ -93,7 +84,10 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       else{
         label_t* label = lasm_find_label_reachable_namespace(lasm_assembler.current_namespace, token->text);
         if(label){
-          expression_flag = 1;
+          hh_bigint_t value; hh_bigint_init(&value, 0);
+          if(lasm_parse_and_eval_expression(tokens, &value, 1, 0, 0) == ERR) return ERR;
+          fwrite(value.data, 1, value.size, lasm_assembler.output_file);
+          hh_bigint_deinit(&value);
         }
         else{
           if(lasm_assembler.machine_assemble() == ERR) return ERR;
@@ -112,32 +106,13 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       hh_darray_init(&lasm_assembler.current_namespace->childs, sizeof(namespace_t));
       hh_darray_init(&lasm_assembler.current_namespace->labels, sizeof(label_t));
       hh_darray_pop(tokens, 0, 0); // Consume curly brace open
-      lasm_scout_namespace(tokens, 0, lasm_assembler.current_namespace);
+      if(lasm_scout_namespace(tokens, 0, lasm_assembler.current_namespace) == (size_t)-1) return ERR;
     }
     //====================================
     // Handle '}' token
     else if(token->id == CBRAC_C){
       // Backwards patches
-      size_t skip_i = 0; 
-      while(hh_darray_get_item_fill(&lasm_assembler.backward_patches) > skip_i){
-        expression_t* patch = hh_darray_get_reference(&lasm_assembler.backward_patches, skip_i);
-        hh_bigint_t value; hh_bigint_init(&value, 0);
-        uint8_t res = lasm_evaluate_expression_tree(patch->root, &value);
-        if(res == ERR) return ERR;
-        if(res == 2){
-          skip_i++;
-          continue;
-          //printf(TAG);
-          //print_error_loc(&patch->root->token);
-          //printf("Expression evaluation failed while backwards patching\n");
-          //return ERR;
-        }
-        fseek(lasm_assembler.output_file, patch->offset, SEEK_SET);
-        fwrite(value.data, 1, value.size < patch->size ? value.size : patch->size, lasm_assembler.output_file);
-        hh_bigint_deinit(&value);
-        parser_expression_deinit(patch);
-        hh_darray_pop(&lasm_assembler.backward_patches, skip_i, 0);
-      }
+      lasm_eval_and_backward_patch_expression(1);
       //...
       namespace_t* upper_ns = (namespace_t *)lasm_assembler.current_namespace->parent;
       if(!lasm_assembler.current_namespace->constant){
@@ -150,7 +125,10 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
     }
     //====================================
     else if(token->id == NUMBER || token->id == STRING_DB || token->id == RBRAC_C){
-      expression_flag = 1;
+      hh_bigint_t value; hh_bigint_init(&value, 0);
+      if(lasm_parse_and_eval_expression(tokens, &value, 1, 0, 0) == ERR) return ERR;
+      fwrite(value.data, 1, value.size, lasm_assembler.output_file);
+      hh_bigint_deinit(&value);
     }
     //====================================
     // Handle "["
@@ -159,7 +137,6 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       //...
       expression_t expression;
       if(parser_expression(tokens, &expression) == ERR) return ERR;
-      print_expression_tree(expression.root);printf("\n");
       hh_bigint_t value; hh_bigint_init(&value, 0);
       // Evaluate expression
       if(lasm_evaluate_expression_tree(expression.root, &value) == ERR) return ERR;
@@ -180,50 +157,85 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
     //==========================================================
     // Evaluate expressions
     if(expression_flag){
-      expression_t expression;
-      if(parser_expression(tokens, &expression) == ERR) return ERR;
-      print_expression_tree(expression.root);printf("\n");
       hh_bigint_t value; hh_bigint_init(&value, 0);
-      uint8_t res = lasm_evaluate_expression_tree(expression.root, &value);
-      if(res == ERR) return ERR;
-      if(res == 2){
-        hh_darray_append(&lasm_assembler.backward_patches, 0);
-        expression_t* patch = hh_darray_get_end_reference(&lasm_assembler.backward_patches);
-        *patch = expression;
-        patch->size = value.size;
-        patch->offset = lasm_get_file_size();
-      }else{
-        parser_expression_deinit(&expression);
-      }
-      hh_bigint_print_hex(&value);
+      if(lasm_parse_and_eval_expression(tokens, &value, 1, 0, 0) == ERR) return ERR;
       fwrite(value.data, 1, value.size, lasm_assembler.output_file);
       hh_bigint_deinit(&value);
     }
     //==========================================================
     // Expect newline
-    lasm_expect_and_skip_id(tokens, NEWLINE);
+    if(lasm_expect_and_skip_id(tokens, NEWLINE) == ERR) return ERR;
   }
+  // =====================
   // Backwards patches
-  while(hh_darray_get_item_fill(&lasm_assembler.backward_patches) > 0){
-    expression_t* patch = hh_darray_get_reference(&lasm_assembler.backward_patches, 0);
+  lasm_eval_and_backward_patch_expression(0);
+  return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t lasm_eval_and_backward_patch_expression(uint8_t enable_skip){
+  size_t skip_i = 0; 
+  while(hh_darray_get_item_fill(&lasm_assembler.backward_patches) > skip_i){
+    expression_t* patch = hh_darray_get_reference(&lasm_assembler.backward_patches, skip_i);
     hh_bigint_t value; hh_bigint_init(&value, 0);
     uint8_t res = lasm_evaluate_expression_tree(patch->root, &value);
     if(res == ERR) return ERR;
     if(res == 2){
-      printf(TAG);
-      print_error_loc(&patch->root->token);
-      printf("Expression evaluation failed while backwards patching\n");
-      return ERR;
+      if(enable_skip){
+        skip_i++;
+        continue;
+      }
+      else{
+        printf(TAG);
+        print_error_loc(&patch->root->token);
+        printf("Expression evaluation failed while backwards patching\n");
+        return ERR;
+      }
+    }
+    if(patch->is_relative){
+      hh_bigint_subtract_int64(&value, patch->offset + patch->size);
     }
     fseek(lasm_assembler.output_file, patch->offset, SEEK_SET);
     fwrite(value.data, 1, value.size < patch->size ? value.size : patch->size, lasm_assembler.output_file);
     hh_bigint_deinit(&value);
     parser_expression_deinit(patch);
-    hh_darray_pop(&lasm_assembler.backward_patches, 0, 0);
+    hh_darray_pop(&lasm_assembler.backward_patches, skip_i, 0);
   }
-  // =====================
   return 0;
 }
+
+//-----------------------------------------------------------------------------
+// Parse and evaluate an expression
+uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result, uint8_t enable_backward_patch, uint8_t is_relative, size_t max_size){
+  expression_t expression;
+  expression.is_relative = is_relative;
+  if(parser_expression(tokens, &expression) == ERR) return ERR;
+  uint8_t res = lasm_evaluate_expression_tree(expression.root, result);
+  if(res == ERR) return ERR;
+  if(res == 2){
+    if(enable_backward_patch){
+      hh_darray_append(&lasm_assembler.backward_patches, 0);
+      expression_t* patch = hh_darray_get_end_reference(&lasm_assembler.backward_patches);
+      *patch = expression;
+      patch->size = result->size < max_size ? result->size : max_size;
+      patch->offset = lasm_get_file_cursor();
+    }else{
+      printf(TAG);
+      print_error_loc(&expression.root->token);
+      printf("Expression evaluation failed. Evaluation don't support backwards patching.\n");
+      return ERR;
+    }
+  }else{
+    parser_expression_deinit(&expression);
+  }
+  if(max_size > 0 && result->size > max_size){
+    hh_bigint_resize(result, max_size);
+  }
+  if(is_relative){
+    hh_bigint_subtract_int64(result, result->size + lasm_get_file_cursor());
+  }
+  return 0;
+}
+
 //-----------------------------------------------------------------------------
 // Search and log all reachable child labels and namespaces
 size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t *namespace){
@@ -246,11 +258,12 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
           hh_darray_init(&child_ns->childs, sizeof(namespace_t));
           hh_darray_init(&child_ns->labels, sizeof(label_t));
           i = lasm_scout_namespace(tokens, i, child_ns);
+          if(i == (size_t)-1) return -1;
         }else{
           printf(TAG);
           print_error_loc(token);
           printf("Namespace named '%s' already reachable and exists at '%s':%d:%d\n", token->text, find->name.filename, find->name.line, find->name.col);
-          return ERR;
+          return -1;
         }
       }
       // 'word...:'
@@ -282,7 +295,7 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
           printf(TAG);
           print_error_loc(token);
           printf("Label named '%s' already exists in same namespace at '%s':%d:%d\n", token->text, find->name.filename, find->name.line, find->name.col);
-          return ERR;
+          return -1;
         }
         // Skip to colon
         token_t *skip_token;

@@ -53,7 +53,7 @@ typedef struct{
 	uint16_t id;
 	uint32_t line;
 	uint32_t col;
-	char filename[32];	
+	char filename[34];	
 	char text[MAX_TOKEN_SIZE];
 }token_t;
 

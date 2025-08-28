@@ -151,6 +151,7 @@ void lasm_6502_init(){
 
 uint8_t lasm_6502_assemble(void){
   token_t *token = hh_darray_get_reference(lasm_assembler.tokens, 0);
+  token_t *next_token = hh_darray_get_reference(lasm_assembler.tokens, 1);
   uint8_t inst_id = is_instruction(token);
   if(inst_id == 255){
     // Handle unknown instruction
@@ -197,140 +198,84 @@ uint8_t lasm_6502_assemble(void){
   }
   //==================================
   // Handle argument values
-  hh_darray_t value_bytes; hh_darray_init(&value_bytes, 1);
-  if(addr_mode & (ADM_ZPG|ADM_ABS)){
-    //if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
-    if(hh_darray_get_fill(&value_bytes) == 1){
-      if(token->id == COMMA){
-        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
-        if(char_upper(token->text[0]) == 'X' && strlen(token->text) == 1){
-          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
-          addr_mode = ADM_ZPG_X;
-        }else if(char_upper(token->text[0]) == 'Y' && strlen(token->text) == 1){
-          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
-          addr_mode = ADM_ZPG_Y;
-        }else{
-          printf(TAG);
-          print_error_loc(token);
-          printf("[ERROR] Expected 'X' or 'Y' after ','\n");
-          return ERR;
-        }
-      }else{
-        addr_mode = ADM_ZPG;        
-      }
-    }else if (hh_darray_get_fill(&value_bytes) == 2){
-      if(token->id == COMMA){
-        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
-        if(char_upper(token->text[0]) == 'X' && strlen(token->text) == 1){
-          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
-          addr_mode = ADM_ABS_X;
-        }else if(char_upper(token->text[0]) == 'Y' && strlen(token->text) == 1){
-          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
-          addr_mode = ADM_ABS_Y;
-        }else{
-          printf(TAG);
-          print_error_loc(token);
-          printf("[ERROR] Expected 'X' or 'Y' after ','\n");
-          return ERR;
-        }
-      }else{
-        addr_mode = ADM_ABS;        
-      }
-    }
+  hh_bigint_t value; hh_bigint_init(&value, 0);
+  if(addr_mode & ADM_IMM){
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
+    hh_bigint_resize(&value, 1); 
   }
-  else if(addr_mode == ADM_IMM){
-    //if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
-    // Ensure only the least significant byte is used
-    while(hh_darray_get_fill(&value_bytes) > 1){
-      hh_darray_popend(&value_bytes, 0);
-    }
-  }
-  else if(addr_mode == ADM_REL){
-    token_t val_token, op_token;
-    hh_darray_get(lasm_assembler.tokens, 0, &val_token);
-    hh_darray_get(lasm_assembler.tokens, 0, &op_token);
-    val_token.id = NUMBER;
-    sprintf(val_token.text, "%ld", ftell(lasm_assembler.output_file)+2);
-    op_token.id = MINUS;
-    sprintf(op_token.text, "%c", '-');
-    hh_darray_push(lasm_assembler.tokens, 1, &val_token);
-    hh_darray_push(lasm_assembler.tokens, 1, &op_token);
-    ///...
-    fseek(lasm_assembler.output_file, 1, SEEK_CUR);
-    //if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, 1) == ERR) return ERR;
-    fseek(lasm_assembler.output_file, -1, SEEK_CUR);
-    // Ensure only the least significant byte is used
-    while(hh_darray_get_fill(&value_bytes) > 1){
-      hh_darray_popend(&value_bytes, 0);
-    }
-  }
-  else if(addr_mode == ADM_IND){
-    //if(lasm_parse_expression(lasm_assembler.tokens, &value_bytes, 1, -1) == ERR) return ERR;
-    if (token->id == RBRAC_C){
-      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
+  else if(addr_mode & (ADM_ZPG|ADM_ABS)){
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
+    if(value.size == 2){
+      addr_mode = ADM_ABS;
       if(token->id == COMMA){
-        if(hh_darray_get_fill(&value_bytes) > 1){
-          printf(TAG);
-          print_error_loc(token);
-          printf("[ERROR] Expected 1 byte but got %lu bytes\n", hh_darray_get_fill(&value_bytes));
-          return ERR;
-        }
-        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
-        if(char_upper(token->text[0]) == 'Y' && strlen(token->text) == 1){
-          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
-          addr_mode = ADM_IND_Y;
-        }
+        if(char_upper(next_token->text[0]) == 'X')      addr_mode = ADM_ABS_X;
+        else if(char_upper(next_token->text[0]) == 'Y') addr_mode = ADM_ABS_Y;
         else{
           printf(TAG);
           print_error_loc(token);
-          printf("Expected 'Y' after ','\n");
+          printf("Unknown register: %s\n", next_token->text);
           return ERR;
         }
-      }
-      else{
-        if(hh_darray_get_fill(&value_bytes) < 2){
-          // Ensure its 2 byte long
-          hh_darray_append(&value_bytes, 0);
-        }
-      }
-    }
-    else{
-      // Ensure its 1 byte from code
-      if(hh_darray_get_fill(&value_bytes) > 1){
-        printf(TAG);
-        print_error_loc(token);
-        printf("[ERROR] Expected 1 byte but got %lu bytes\n", hh_darray_get_fill(&value_bytes));
-        return ERR;
-      }
-      if(token->id == COMMA){
+        //Consume ,x/y
         hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
-        if(char_upper(token->text[0]) == 'X' && strlen(token->text) == 1){
-          hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
-          addr_mode = ADM_X_IND;
-        }else{
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X/Y'
+      }
+    }else if(value.size == 1){
+      addr_mode = ADM_ZPG;
+      if(token->id == COMMA){
+        if(char_upper(next_token->text[0]) == 'X')      addr_mode = ADM_ZPG_X;
+        else if(char_upper(next_token->text[0]) == 'Y') addr_mode = ADM_ZPG_Y;
+        else{
           printf(TAG);
           print_error_loc(token);
-          printf("[ERROR] Expected 'X' after ','\n");
+          printf("Unknown register: %s\n", next_token->text);
           return ERR;
         }
-        
-        if(token->id != RBRAC_C){
-          printf(TAG);
-          print_error_loc(token);
-          printf("Expected a right bracket ')' but got '%s'\n", token->text);
-          return ERR;
-        }
-        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
+        //Consume ,x/y
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X/Y'
       }
-      else{
-        printf(TAG);
-        print_error_loc(token);
-        printf("Invalid Indirect Addressing Mode\n");
-        return ERR;
-      }
+    }else{
+      printf(TAG);
+      print_error_loc(token);
+      printf("Value out of range for zero page or absolute addressing mode\n");
+      return ERR;
     }
+  }else if(addr_mode & ADM_IND){
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
+    if(next_token->id == COMMA){
+      addr_mode = ADM_IND_Y;
+      hh_bigint_resize(&value, 1);
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
+    }else if(char_upper(next_token->text[0]) == 'X'){
+      addr_mode = ADM_X_IND;
+      hh_bigint_resize(&value, 1);
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
+    }else{
+      hh_bigint_resize(&value, 2);
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
+    }
+  }else if(addr_mode & ADM_REL){
+    fseek(lasm_assembler.output_file, 1, SEEK_CUR); // Reserve space for relative address
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 1, 1) == ERR) return ERR;
+    fseek(lasm_assembler.output_file, -1, SEEK_CUR); // Reserve space for relative address
+    hh_bigint_resize(&value, 1);
+    if(value.sign){
+      value.data[0] = ~value.data[0]+1;
+    }
+  }else if(addr_mode & (ADM_IMPL|ADM_ACCUM)){
+    value.size = 0;
+  }else{
+    printf(TAG);
+    print_error_loc(token);
+    printf("Unknown addressing mode\n");
+    return ERR;
   }
-  //=================================================
+  //================================================&
   // Is this addressing mode valid with instruction
   if(!(inst_addrs_mods[inst_id] & addr_mode)){
     printf(TAG);
@@ -341,15 +286,11 @@ uint8_t lasm_6502_assemble(void){
   }
   // Get instruction byte
   uint8_t instruction_byte = get_value_of_instruction(inst_id, addr_mode);
- 
+  // Write to file
   fputc(instruction_byte, lasm_assembler.output_file);
-  for(uint8_t i = 0; i < hh_darray_get_fill(&value_bytes); i++){
-    uint8_t value; hh_darray_get(&value_bytes, i, &value);
-    fputc(value, lasm_assembler.output_file);
-  }
-
-
-  hh_darray_deinit(&value_bytes);
+  fwrite(value.data, 1, value.size, lasm_assembler.output_file);
+  //...
+  hh_bigint_deinit(&value);
   return 0;
 }
 

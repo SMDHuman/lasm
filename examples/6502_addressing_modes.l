@@ -49,8 +49,10 @@ STA (0x71),Y     // Store Accumulator to address stored at 0x71 plus Y
 
 // Relative (for branch instructions)
 loop:
-  BEQ loop    // Branch to loop if equal (Z=1)
+  BEQ end    // Branch to loop if equal (Z=1)
   BNE loop    // Branch to loop if not equal (Z=0)
+
+end:
 
 // Output of this file should be 
 //18     // CLC

@@ -59,6 +59,7 @@ uint8_t hh_bigint_init(hh_bigint_t *bigint, const int32_t init_number);
 uint8_t hh_bigint_deinit(hh_bigint_t *bigint);
 uint8_t hh_bigint_resize(hh_bigint_t *bigint, const size_t new_capacity);
 uint8_t hh_bigint_set_zero(hh_bigint_t *bigint);
+uint8_t hh_bigint_set_int64(hh_bigint_t *bigint, const int64_t value);
 uint8_t hh_bigint_set_int32(hh_bigint_t *bigint, const int32_t value);
 uint8_t hh_bigint_set_uint32(hh_bigint_t *bigint, const uint32_t value);
 uint8_t hh_bigint_set_uint16(hh_bigint_t *bigint, const uint16_t value);
@@ -70,6 +71,7 @@ uint8_t hh_bigint_print(const hh_bigint_t *bigint);
 uint8_t hh_bigint_print_hex(const hh_bigint_t *bigint);
 uint8_t hh_bigint_add_int32(hh_bigint_t *bigint, const int32_t value);
 uint8_t hh_bigint_subtract_int32(hh_bigint_t *bigint, const int32_t value);
+uint8_t hh_bigint_subtract_int64(hh_bigint_t *bigint, const int64_t value);
 uint8_t hh_bigint_add(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result);
 uint8_t hh_bigint_subtract(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result);
 // a > b
@@ -128,7 +130,17 @@ uint8_t hh_bigint_set_zero(hh_bigint_t *bigint){
     bigint->sign = 0;
     return 0;
 }
-
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_set_int64(hh_bigint_t *bigint, int64_t value){
+    if(value < 0){
+        bigint->sign = 1;
+        value = -value;
+    }else if(value > 0){
+        bigint->sign = 0;
+    }
+    if(hh_bigint_set_buffer(bigint, &value, 8) == ERR) return ERR;
+    return 0;
+}
 //-----------------------------------------------------------------------------
 uint8_t hh_bigint_set_int32(hh_bigint_t *bigint, int32_t value){
     if(value < 0){
@@ -212,6 +224,17 @@ uint8_t hh_bigint_add_int32(hh_bigint_t *bigint, const int32_t value){
 uint8_t hh_bigint_subtract_int32(hh_bigint_t *bigint, const int32_t value){
     hh_bigint_t b; hh_bigint_init(&b, value);    
     hh_bigint_t c; hh_bigint_init(&c, 0);    
+    hh_bigint_subtract(bigint, &b, &c);
+    hh_bigint_copy(bigint, &c);
+    hh_bigint_deinit(&b);
+    hh_bigint_deinit(&c);
+    return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_subtract_int64(hh_bigint_t *bigint, const int64_t value){
+    hh_bigint_t b; hh_bigint_init(&b, 0);
+    hh_bigint_set_int64(&b, value);
+    hh_bigint_t c; hh_bigint_init(&c, 0);
     hh_bigint_subtract(bigint, &b, &c);
     hh_bigint_copy(bigint, &c);
     hh_bigint_deinit(&b);

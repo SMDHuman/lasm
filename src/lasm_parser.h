@@ -15,7 +15,8 @@ typedef struct {
 } expression_tree_t;
 
 typedef struct{
-  uint8_t size; // Size of the expression in bytes
+  uint8_t is_relative; // Is the expression relative?
+  uint32_t size; // Size of the expression in bytes
   uint32_t offset; // Offset in the output file
   expression_tree_t *root; // Tokens that make up the expression
   int32_t last_low_precedence;
