@@ -3,10 +3,23 @@ LOTP assembler is a high-level assembler for my custom CPUs and the 6502 CPU. Th
 
 ### What has special than other assemblers?
 It has all the necessary macros that we love from the C language, namespaces for branch labels, and support for numbers of arbitrary (effectively unlimited) size. All of these are to make this language fun to use and to try new methods of writing assembly.
-
-### What "LOTP" means?
-LOTP is an acronym that I use to give my project's name as a signature of mine. It means "Line On The Paper". From the start of my engineering hobby, I usually start a project on a paper with some sketches and ideas. It refers to the root branch of the start of the project.
-
+## How To Use
+  Clone the project and run `make` on your terminal to build.
+  ```bash
+  git clone https://github.com/SMDHuman/lasm.git
+  cd lasm
+  make
+  cd build
+  ./lasm --help
+  ``` 
+  Currently you only need to give the one input file and a machine name to assemble a program.
+  ```bash
+  ./lasm ../examples/basic_syntax.l -m 6502
+  ```
+  You can optionally add an output path for the binary
+  ```bash
+  ./lasm ../examples/basic_syntax.l -m 6502 -o bin/basic_syntax.bin
+  ```
 ## Features 
 ### Comments and New Lines
   You can write comments with the good old ```//``` double slash. Usually, you do not need to use ```;``` at the end of your lines. New lines are sufficient, but if you want to write multiple statements on one line, you can separate them with semicolons.
@@ -85,3 +98,6 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
     hlt
   ```
 > **_NOTE:_** Determined labels can be any size of byte but undetermined labels fixed to machine specific byte size.
+
+### What "LOTP" means?
+LOTP is an acronym that I use to give my project's name as a signature of mine. It means "Line On The Paper". From the start of my engineering hobby, I usually start a project on a paper with some sketches and ideas. It refers to the root branch of the start of the project.
