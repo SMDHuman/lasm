@@ -1,0 +1,36 @@
+{
+  "name": "__global__",
+  "constant": true,
+  "level": 0,
+  "labels": [
+    {
+      "name": "data",
+      "is_vector": true,
+      "value": 16384
+    },
+    {
+      "name": "start",
+      "is_vector": true
+    },
+    {
+      "name": "reset_vectors",
+      "is_vector": true
+    }
+  ],
+  "children": [
+    {
+      "name": "consts",
+      "constant": true,
+      "level": 1,
+      "labels": [
+        {
+          "name": "hellow",
+          "is_vector": false,
+          "value": 16384
+        }
+      ],
+      "children": [
+      ]
+    }
+  ]
+}

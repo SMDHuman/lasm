@@ -91,9 +91,9 @@ int main(int argc, char *argv[]){
   }
   fclose(output);
   // Export global namespace to JSON
-  FILE *json = fopen("build/global_namespace.json", "w");
-  lasm_export_json_namespace(&lasm_assembler.global_namespace, json, 0);
-  fclose(json);
+  // FILE *json = fopen("global_namespace.json", "w");
+  // lasm_export_json_namespace(&lasm_assembler.global_namespace, json, 0);
+  // fclose(json);
   //====================================
   // Free each macro in the macros array
   for(size_t i = 0; i < hh_darray_get_item_fill(&macros); i++) {

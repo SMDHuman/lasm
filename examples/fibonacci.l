@@ -5,7 +5,7 @@ zp{
   c[2]:
 }
 
-start[0x400]:
+start[0x8000]:
 // initialize 
 lda #1; sta zp.a
 
@@ -22,19 +22,20 @@ lda #1; sta zp.a
   // b = c
   lda zp.c
   sta zp.b
+  // wait input
+  lda #1
+  sta 0x1100
+  // loop back or exit on carry set
   bcc loop
   clc; bcc HALT
 }
 0.[16]
 
 HALT:
-  lda #0xcc
-  sta temp
-  sta temp + 1
-  jmp temp
-  temp: 0.(2)
+  lda #0
+  sta 0x1100
 
 
 reset_vectors[0xfffa]:
-  0.(2);start;0.(2)
+  0.(2);start;HALT
   

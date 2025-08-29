@@ -1,6 +1,9 @@
 //-----------------------------------------------------------------------------
 // This is a simple 6502 commandline emulator that implements some of 
 // C standard library functions as syscalls. 
+// To call a function, you use 0x1100 - 0x1101 address.
+// Return value is stored in 0x1110 - 0x1117 with 8 bytes
+// And to pass arguments 0x1120 - 0x113F with 32 bytes
 //-----------------------------------------------------------------------------
 // std6502.c
 // github.com/SMDHuman
@@ -11,7 +14,16 @@
 #define HH_ARGPARSE_IMPLEMENTATION
 #include "hh_argparse.h"
 
+/*
+  write the value of function you want to call to 0x1100-0x1101
+    0x0000: return(int32_t exit_code);
+    0x0001: int32_t puts ( uint16_t str_pointer );
+*/
+void print_all_status();
+
 uint8_t memory[65536] = {0};
+uint8_t running = 1;
+int32_t exit_code = 0;
 
 //-----------------------------------------------------------------------------
 int main(int argc, char *argv[]){
@@ -39,27 +51,55 @@ int main(int argc, char *argv[]){
 
   // Run the 6502 emulator
   reset6502();
-  while(1){
+  while(running){
     step6502();
-    printf("A: %01X\n", a);
-    printf("PC: %02X\n", pc);
-    printf("instructions: %x\n", opcode);
-    if (pc == 0) break; // Simple halt condition
+    //print_all_status();
+    // getchar(); // Wait for user input to proceed to the next step
   }
 
   hh_argparse_deinit(argparse);
-  return 0;
+  return exit_code;
+}
+
+void print_all_status(){
+  printf("A: %d\n", a);
+  printf("X: %d\n", x);
+  printf("Y: %d\n", y);
+  printf("PC: %x\n", pc);
+  printf("SP: %x\n", sp);
+  printf("============================\n");
+}
+
+//-----------------------------------------------------------------------------
+void exec_std_functions(){
+  uint16_t function_call_value = (memory[0x1101] << 8) | memory[0x1100];
+  uint8_t* args = &memory[0x1120];
+  // printf("Function call: %x\n", function_call_value);
+  // printf("Arguments: ");
+  // for(int i = 0; i < 32; i++) {
+  //   printf("%02x ", args[i]);
+  // }
+  // printf("\n");
+  switch(function_call_value){
+    case 0x0000: // return
+      running = 0;
+      exit_code = *(int32_t*)args;
+      break;
+    case 0x0001: // puts
+      int* result = (int*)&memory[0x1110];
+      *result = puts((const char*)&memory[*(uint16_t*)args]);
+      break;
+    // Add more cases for other functions here
+  }
 }
 
 //-----------------------------------------------------------------------------
 uint8_t read6502(uint16_t address) {
   // Read a byte from the specified address
-  printf("Reading from address %04X: %02X\n", address, memory[address]);
   return memory[address];
 }
 
 void write6502(uint16_t address, uint8_t value) {
-  // Write a byte to the specified address
-  printf("Writing to address %04X: %02X\n", address, value);
   memory[address] = value;
+  if(address == 0x1101) exec_std_functions();
 }
