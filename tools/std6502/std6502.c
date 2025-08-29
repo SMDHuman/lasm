@@ -1,9 +1,10 @@
 //-----------------------------------------------------------------------------
 // This is a simple 6502 commandline emulator that implements some of 
 // C standard library functions as syscalls. 
-// To call a function, you use 0x1100 - 0x1101 address.
-// Return value is stored in 0x1110 - 0x1117 with 8 bytes
-// And to pass arguments 0x1120 - 0x113F with 32 bytes
+// To call a function, you use 0x1100 address. 
+// Store to that address argument size you provide 
+// after the store instruction, put your instruction id and arguments
+// Return value is stored in 0x11101 - 0x11ff with 255 bytes
 //-----------------------------------------------------------------------------
 // std6502.c
 // github.com/SMDHuman
@@ -15,9 +16,8 @@
 #include "hh_argparse.h"
 
 /*
-  write the value of function you want to call to 0x1100-0x1101
-    0x0000: return(int32_t exit_code);
-    0x0001: int32_t puts ( uint16_t str_pointer );
+    void return (int32_t exit_code)      : opcode[2], exit_code[4]    : 0x0000 
+    int32_t puts (uint16_t str_pointer)  : opcode[2], str_pointer[2]  : 0x0001 
 */
 void print_all_status();
 
@@ -72,11 +72,12 @@ void print_all_status(){
 
 //-----------------------------------------------------------------------------
 void exec_std_functions(){
-  uint16_t function_call_value = (memory[0x1101] << 8) | memory[0x1100];
-  uint8_t* args = &memory[0x1120];
+  uint16_t function_call_value = (memory[pc+4] << 8) | memory[pc+3];
+  uint8_t* args = &memory[pc + 5];
+  uint8_t argc = memory[0x1100]-2;
   // printf("Function call: %x\n", function_call_value);
   // printf("Arguments: ");
-  // for(int i = 0; i < 32; i++) {
+  // for(int i = 0; i < argc; i++) {
   //   printf("%02x ", args[i]);
   // }
   // printf("\n");
@@ -101,5 +102,5 @@ uint8_t read6502(uint16_t address) {
 
 void write6502(uint16_t address, uint8_t value) {
   memory[address] = value;
-  if(address == 0x1101) exec_std_functions();
+  if(address == 0x1100) exec_std_functions();
 }

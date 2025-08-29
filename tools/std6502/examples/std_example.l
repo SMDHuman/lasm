@@ -4,35 +4,34 @@ consts{
 }
 
 
-
 start[0x8000]:
 {
   emu_puts consts.hellow
-  { 
-    bvc str_end
-    str: "another string" ;0; str_end: 
-    emu_puts str
-  }
 }
-emu_return
+emu_return 0
+
+<call_func 0x1100>
+
+<emu_return <exit_code>
+  lda# 6
+  {
+    sta call_func
+    jmp next
+    0x00.2; (<exit_code>).(4)
+    next:
+  }
+>
+
+<emu_puts <str_pointer>
+  lda# 4
+  {
+    sta call_func
+    jmp next
+    0x0001.(2); (<str_pointer>).(2); 
+    next:
+  }
+>
+
 
 reset_vectors[0xfffa]:
   0.(2);start;0.(2)
-
-<emu_puts <str_pointer>
-  lda# <str_pointer>[0]
-  sta 0x1120
-  lda# <str_pointer>[1]
-  sta 0x1121
-  lda# 01
-  sta 0x1100
-  lda# 00
-  sta 0x1101
->  
-
-<emu_return
-  lda# 00
-  sta 0x1100
-  lda# 00
-  sta 0x1101
->

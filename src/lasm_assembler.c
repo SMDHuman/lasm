@@ -124,7 +124,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
      
     }
     //====================================
-    else if(token->id == NUMBER || token->id == STRING_DB || token->id == RBRAC_C){
+    else if(token->id == NUMBER || token->id == STRING_DB || token->id == RBRAC_O){
       hh_bigint_t value; hh_bigint_init(&value, 0);
       if(lasm_parse_and_eval_expression(tokens, &value, 1, 0, 0) == ERR) return ERR;
       fwrite(value.data, 1, value.size, lasm_assembler.output_file);
