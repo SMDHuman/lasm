@@ -33,7 +33,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 						if(next == '<'){
 							token.id = BITSHIFT_L;
 						}else{
-							fseek(file, -1, SEEK_CUR);
+							if(next != EOF) fseek(file, -1, SEEK_CUR);
 							token.id=MACRO_O;
 						}
 		}
@@ -42,7 +42,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 						if(next == '>'){
 							token.id = BITSHIFT_R;
 						}else{
-							fseek(file, -1, SEEK_CUR);
+							if(next != EOF) fseek(file, -1, SEEK_CUR);
 							token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
 							token_t t2; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-2, &t2);
 							if(t1.id == WORD && t2.id == MACRO_O){
@@ -104,7 +104,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		// Parse numbers
 		if(is_inside(cr, "1234567890")){
 			memset(word, 0, MAX_TOKEN_SIZE);
-			while(is_inside(char_lower(cr), "1234567890xabcdef")){
+			while(is_inside(char_lower(cr), "1234567890xabcdef") && cr != EOF){
 				strcat(word, &cr);
 				cr = fgetc(file);
 				col++;
@@ -114,12 +114,12 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 			token.col=col-strlen(word);
 			memcpy(token.text, word, MAX_TOKEN_SIZE);
 			hh_darray_append(tokens, &token);
-			fseek(file, -1, SEEK_CUR);
+			if(cr != EOF) fseek(file, -1, SEEK_CUR);
 		}
 		// Parse words
 		if(is_alpha(cr) || cr == '_'){
 			memset(word, 0, MAX_TOKEN_SIZE);
-			while(is_alphanum(cr) || cr == '_' || cr == '.'){
+			while((is_alphanum(cr) || cr == '_' || cr == '.') && cr != EOF){
 				strcat(word, &cr);
 				cr = fgetc(file);
 				col++;
@@ -129,12 +129,12 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 			token.col=col-strlen(word);
 			memcpy(token.text, word, MAX_TOKEN_SIZE);
 			hh_darray_append(tokens, &token);
-			fseek(file, -1, SEEK_CUR);
+			if(cr != EOF) fseek(file, -1, SEEK_CUR);
 		}
 		// Parse double qoute string
 		if(cr == '"'){
 			memset(word, 0, MAX_TOKEN_SIZE);
-			while(1){
+			while(cr != EOF){
 				cr = fgetc(file);
 				if(cr == '"') break;
 				strcat(word, &cr);
@@ -149,7 +149,7 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		// Parse Single qoute string
 		if(cr == '\''){
 			memset(word, 0, MAX_TOKEN_SIZE);
-			while(1){
+			while(cr != EOF){
 				cr = fgetc(file);
 				if(cr == '\'') break;
 				strcat(word, &cr);

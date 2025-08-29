@@ -246,11 +246,15 @@ uint8_t lasm_clear_multi_newlines(hh_darray_t *tokens){
 uint8_t lasm_newline_after_branches(hh_darray_t *tokens){
 	for(uint32_t i = 0; i < hh_darray_get_item_fill(tokens); i++){
 		token_t token; hh_darray_get(tokens, i, &token);
-		if(token.id == COLON){
+		if(token.id == COLON || token.id == CBRAC_O){
 			token_t token_nl; memcpy(&token_nl, &token, sizeof(token_nl));
 			token_nl.text[0] = ';'; token_nl.id = NEWLINE;
 			hh_darray_push(tokens, ++i, &token_nl);
-		}					
-	}	
+		}else if(token.id == CBRAC_C){
+			token_t token_nl; memcpy(&token_nl, &token, sizeof(token_nl));
+			token_nl.text[0] = ';'; token_nl.id = NEWLINE;
+			hh_darray_push(tokens, i++, &token_nl);
+		}
+	}
 	return 0;
 }

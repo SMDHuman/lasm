@@ -10,7 +10,7 @@ start[0x8000]:
   emu_puts consts.hellow
   { 
     bvc str_end
-    str: "another string";0; str_end: // this field bugged when inside scope
+    str: "another string" ;0; str_end: 
     emu_puts str
   }
 }

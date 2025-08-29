@@ -194,8 +194,10 @@ uint8_t lasm_eval_and_backward_patch_expression(uint8_t enable_skip){
     if(patch->is_relative){
       hh_bigint_subtract_int64(&value, patch->offset + patch->size);
     }
+    size_t current_offset = ftell(lasm_assembler.output_file);
     fseek(lasm_assembler.output_file, patch->offset, SEEK_SET);
     fwrite(value.data, 1, value.size < patch->size ? value.size : patch->size, lasm_assembler.output_file);
+    fseek(lasm_assembler.output_file, current_offset, SEEK_SET);
     hh_bigint_deinit(&value);
     parser_expression_deinit(patch);
     hh_darray_pop(&lasm_assembler.backward_patches, skip_i, 0);
