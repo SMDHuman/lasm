@@ -192,10 +192,13 @@ uint8_t lasm_eval_and_backward_patch_expression(uint8_t enable_skip){
       }
     }
     if(patch->is_relative){
+      printf("Relative\n");
       hh_bigint_subtract_int64(&value, patch->offset + patch->size);
     }
     fseek(lasm_assembler.output_file, patch->offset, SEEK_SET);
     fwrite(value.data, 1, value.size < patch->size ? value.size : patch->size, lasm_assembler.output_file);
+    printf("Wrote patch at: %02X  size: %d\n", patch->offset, patch->size);
+    hh_bigint_print_hex(&value);
     hh_bigint_deinit(&value);
     parser_expression_deinit(patch);
     hh_darray_pop(&lasm_assembler.backward_patches, skip_i, 0);
@@ -216,7 +219,8 @@ uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result,
       hh_darray_append(&lasm_assembler.backward_patches, 0);
       expression_t* patch = hh_darray_get_end_reference(&lasm_assembler.backward_patches);
       *patch = expression;
-      patch->size = result->size < max_size ? result->size : max_size;
+      if(max_size > 0) patch->size = result->size < max_size ? result->size : max_size;
+      else patch->size = result->size;
       patch->offset = lasm_get_file_cursor();
     }else{
       printf(TAG);

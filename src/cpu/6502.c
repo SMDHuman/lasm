@@ -199,6 +199,7 @@ uint8_t lasm_6502_assemble(void){
   //==================================
   // Handle argument values
   hh_bigint_t value; hh_bigint_init(&value, 0);
+  fseek(lasm_assembler.output_file, 1, SEEK_CUR); // Reserve space for addressings
   if(addr_mode & ADM_IMM){
     if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
     hh_bigint_resize(&value, 1); 
@@ -260,9 +261,7 @@ uint8_t lasm_6502_assemble(void){
       hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
     }
   }else if(addr_mode & ADM_REL){
-    fseek(lasm_assembler.output_file, 1, SEEK_CUR); // Reserve space for relative address
     if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 1, 1) == ERR) return ERR;
-    fseek(lasm_assembler.output_file, -1, SEEK_CUR); // Reserve space for relative address
     hh_bigint_resize(&value, 1);
     if(value.sign){
       value.data[0] = ~value.data[0]+1;
@@ -275,7 +274,8 @@ uint8_t lasm_6502_assemble(void){
     printf("Unknown addressing mode\n");
     return ERR;
   }
-  //================================================&
+  fseek(lasm_assembler.output_file, -1, SEEK_CUR); // Reserve space for addressings
+  //================================================
   // Is this addressing mode valid with instruction
   if(!(inst_addrs_mods[inst_id] & addr_mode)){
     printf(TAG);

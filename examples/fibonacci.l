@@ -28,8 +28,13 @@ lda #1; sta zp.a
 0.[16]
 
 HALT:
-  clc; bcc HALT
+  lda #0xcc
+  sta temp
+  sta temp + 1
+  jmp temp
+  temp: 0.(2)
+
 
 reset_vectors[0xfffa]:
-  start;start;start
+  0.(2);start;0.(2)
   
