@@ -133,18 +133,12 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
     //====================================
     // Handle "["
     else if(token->id == SBRAC_O){ 
-      hh_darray_pop(tokens, 0, 0); // Consume open bracket
-      //...
-      expression_t expression;
-      if(parser_expression(tokens, &expression) == ERR) return ERR;
+      hh_darray_pop(tokens, 0, 0); // Consume square brace open
       hh_bigint_t value; hh_bigint_init(&value, 0);
-      // Evaluate expression
-      if(lasm_evaluate_expression_tree(expression.root, &value) == ERR) return ERR;
-      parser_expression_deinit(&expression);
-      //uint32_t value;// = lasm_evaluate_expression(&expression, output);
-      ////...
+      if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+      uint64_t eval_val = hh_bigint_get_uint64(&value);
+      fseek(lasm_assembler.output_file, eval_val, SEEK_SET);
       if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
-      //fseek(output, value, SEEK_SET);
       if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
     }
     //====================================
@@ -471,7 +465,33 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
     if(hh_bigint_convert_from_string(number, node->token.text) == ERR) return ERR;
   }else if(node->token.id == STRING_DB){
     hh_bigint_resize(number, strlen(node->token.text));
-    memcpy(number->data, node->token.text, strlen(node->token.text));
+    uint8_t backslash = 0;
+    uint8_t chr = node->token.text[0];
+    for(size_t i = 0; chr != 0; i++){
+      chr = node->token.text[i];
+      if(chr == '\\' && !backslash){
+        backslash = 1;
+        continue;
+      }
+      if(backslash){
+        switch(chr){
+          case 'n': chr = '\n'; break;
+          case 'r': chr = '\r'; break;
+          case 't': chr = '\t'; break;
+          case '\\': chr = '\\'; break;
+          case '\'': chr = '\''; break;
+          case '\"': chr = '\"'; break;
+          case '0': chr = '\0'; break;
+          default:
+            printf(TAG);
+            print_error_loc(&node->token);
+            printf("Unknown escape sequence: \\%c\n", chr);
+            return ERR;
+        }
+        backslash = 0;
+      }
+      hh_bigint_set_at(number, chr, i);
+    }
   }else if(node->token.id == WORD){
     label_t* label = lasm_find_label_reachable_namespace(lasm_assembler.current_namespace, node->token.text);
     if(label != NULL){

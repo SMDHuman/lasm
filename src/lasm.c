@@ -17,6 +17,8 @@
 
 #include "cpu/6502.c"
 
+char* extract_folder_path(const char* path);
+
 //-----------------------------------------------------------------------------
 int main(int argc, char *argv[]){
   // Parse Arguments
@@ -44,6 +46,9 @@ int main(int argc, char *argv[]){
     printf("[ERROR] No file found named '%s'\n", input_file_path);
     return ERR;
   }
+  //..
+  char *path = extract_folder_path(input_file_path);
+  hh_darray_append(&include_paths, &path);
   // Tokenize input file
   hh_darray_t tokens; hh_darray_init(&tokens, sizeof(token_t));
   printf("Tokenizing %s\n", input_file_path);
@@ -116,4 +121,16 @@ int main(int argc, char *argv[]){
   hh_argparse_deinit(parser);
   printf("Done!\n");
   return 0;
+}
+
+//-----------------------------------------------------------------------------
+char* extract_folder_path(const char* path){
+  uint16_t size = 0;
+  for(uint16_t i = 0; path[i] != 0; i++){
+    if(path[i] == '/' || path[i] == '\\') size = i;
+  }
+  char* folder_path = malloc(size+1);
+  memcpy(folder_path, path, size);
+  folder_path[size] = 0;
+  return(folder_path);
 }

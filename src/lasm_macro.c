@@ -28,8 +28,8 @@ uint8_t lasm_find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths
 						strcat(path_merge, "/");
 						strcat(path_merge, token.text);	
 						file = fopen(path_merge, "r");
-						if(file != NULL) break;
 						free(path_merge);
+						if(file != NULL) break;
 					}
 					if(file == NULL){
 						print_error_loc(&token);
@@ -55,7 +55,7 @@ uint8_t lasm_find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths
 			if(macro_inside == 0) macro_size = 0;
 		}
 
-		if(macro_inside) macro_size++;
+		if(macro_inside > 0) macro_size++;
 		if(token.id == MACRO_O) macro_inside++;
 	}	
 	
