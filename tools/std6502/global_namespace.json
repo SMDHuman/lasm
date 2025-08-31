@@ -4,17 +4,14 @@
   "level": 0,
   "labels": [
     {
-      "name": "data",
-      "is_vector": true,
-      "value": 16384
-    },
-    {
       "name": "start",
-      "is_vector": true
+      "is_vector": true,
+      "value": 32768
     },
     {
       "name": "reset_vectors",
-      "is_vector": true
+      "is_vector": true,
+      "value": 65530
     }
   ],
   "children": [

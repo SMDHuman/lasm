@@ -98,6 +98,37 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
     hlt
   ```
 > **_NOTE:_** Determined labels can be any size of byte but undetermined labels fixed to machine specific byte size.
+### Namespaces and scopes
+  You can isolate labels using scopes with curly braces '{}'. Code can reach upper levels of labels but not the lower ones.
+  ```
+  start[0x8000]:
+  {
+    jmp next; temp:
+    "Hello World"
+    next: 
+    emu_puts temp
+  }
+  ``` 
+  If scope starts with a name, it will create a namespace to make it accessable afterwards.
+  ```
+  zeropage{
+    x[0]:
+    y[2]:
+    z[4]:
+    stack[0x100]{ // You can also define a namespace and set the address counter
+      start:
+      end[start+0x255]:
+    }
+  }
+
+  start[0x8000]:
+  {
+    lda #5
+    sta zeropage.x
+    adc #1
+    sta zeropage.y
+  }
+  ```
 
 ### What "LOTP" means?
 LOTP is an acronym that I use to give my project's name as a signature of mine. It means "Line On The Paper". From the start of my engineering hobby, I usually start a project on a paper with some sketches and ideas. It refers to the root branch of the start of the project.

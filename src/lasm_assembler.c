@@ -39,15 +39,29 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
     //====================================
       // Handle word token
     if(token->id == WORD){
-      token_t *next_token = hh_darray_get_reference(tokens, 1);
-      // 'word{'
-      if(next_token->id == CBRAC_O){
+      // 'word...{'
+      if(lasm_is_lineend_id(tokens, 0, CBRAC_O)){
         namespace_t* find = lasm_find_namespace_reachable_namespace(lasm_assembler.current_namespace, token->text);
         // This is already found by scout
         if(find){
           lasm_assembler.current_namespace = find;
-          hh_darray_pop(tokens, 0, 0); // Consume name
-          hh_darray_pop(tokens, 0, 0); // Consume curly brace open
+          token_t* next_token = hh_darray_get_reference(tokens, 1);
+          // 'word[...]{'
+          if(next_token->id == SBRAC_O){
+            hh_darray_pop(tokens, 0, 0); // Consume name
+            hh_darray_pop(tokens, 0, 0); // Consume square brace open
+            hh_bigint_t value; hh_bigint_init(&value, 0);
+            if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+            uint64_t eval_value = hh_bigint_get_uint64(&value);
+            fseek(lasm_assembler.output_file, eval_value, SEEK_SET);
+            if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
+            if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
+          }
+          // 'word{'
+          else{
+            hh_darray_pop(tokens, 0, 0); // Consume name
+            if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
+          }
         }
       }
       // 'word...:'
@@ -241,8 +255,8 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
     token_t* token = hh_darray_get_reference(tokens, i++);
     if(token->id == WORD){
       token_t *next_token = hh_darray_get_reference(tokens, i);
-      // 'word{'
-      if(next_token->id == CBRAC_O){
+      // 'word...{'
+      if(lasm_is_lineend_id(tokens, i, CBRAC_O)){
         i++;
         namespace_t* find = lasm_find_namespace_reachable_namespace(namespace, token->text);
         if(!find){
@@ -254,6 +268,11 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
           namespace_t* child_ns = hh_darray_get_end_reference(&namespace->childs);
           hh_darray_init(&child_ns->childs, sizeof(namespace_t));
           hh_darray_init(&child_ns->labels, sizeof(label_t));
+          token_t *skip_tokens = hh_darray_get_reference(tokens, i);
+          while(skip_tokens->id != CBRAC_O){
+            i++;
+            skip_tokens = hh_darray_get_reference(tokens, i);
+          }i++;
           i = lasm_scout_namespace(tokens, i, child_ns);
           if(i == (size_t)-1) return -1;
         }else{
