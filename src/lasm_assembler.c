@@ -37,7 +37,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   while(hh_darray_get_fill(tokens) > 0){
     uint8_t expression_flag = 0;
     //====================================
-      // Handle word token
+    // Handle word token
     if(token->id == WORD){
       // 'word...{'
       if(lasm_is_lineend_id(tokens, 0, CBRAC_O)){
@@ -268,6 +268,7 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
           namespace_t* child_ns = hh_darray_get_end_reference(&namespace->childs);
           hh_darray_init(&child_ns->childs, sizeof(namespace_t));
           hh_darray_init(&child_ns->labels, sizeof(label_t));
+          i--;
           token_t *skip_tokens = hh_darray_get_reference(tokens, i);
           while(skip_tokens->id != CBRAC_O){
             i++;

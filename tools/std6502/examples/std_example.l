@@ -1,10 +1,11 @@
 <"../std6502.l">
 
 consts[0x4000]{
-  hellow: "hello word"
+  hellow: "hello world\0"
 }
 
-start[0x8000]:{
+start[0x8000]:
+{
   emu_puts consts.hellow
   emu_puts_imm "Immidiate String\0"
 }
