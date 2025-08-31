@@ -58,3 +58,4 @@ dkms.conf
 
 # Project spesific files
 global_space.json
+tools/std6502/build/std6502
