@@ -58,7 +58,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
           }
           // 'word{'
-          else{
+          else if(next_token->id == CBRAC_O){
             hh_darray_pop(tokens, 0, 0); // Consume name
             if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
           }

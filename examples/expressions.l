@@ -3,9 +3,9 @@ zp{
   a[0]: 
   b[2]:
   c[4]: 
-  stack{
-    start[256]:
-    end[511]:
+  stack[0x100]{
+    start:
+    end[start+255]:
   }
 }
 global:
