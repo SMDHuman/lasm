@@ -86,7 +86,7 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
 
   stack[start - 32]: // But this is ok cause start is determined
 
-  start[0x8000]:
+  start[0x8000 :: start + 0x200]:
     lda # 42
     loop: // you can use this branch values most of the time
       sta x
@@ -129,6 +129,22 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
     sta zeropage.y
   }
   ```
+  ### Memory Restrictions
+  If you want the certain portion of code to restricted in a certain memory location, you need to use range function of address setters. When you create a branch label or namespace with vector, assembler starts counting number of bytes written to output. If you give a range to the vector, assembler will give an error when its exceeded the limits. 
+  ```
+  zp[0::256]{ 
+    // Assembler sets its writing counter limit to 256 until another vector shows up
+    x: 0 .(50)
+    y: 0 .(40)
+  }
+
+  // This is also valid because vector address already evaluated, when range evaluating
+  start[0x8000 :: start+0x400]: 
+  // Some code
+
+  subroutines[0x9000 :: 0xA000]:
+  // Some other code
+  ``` 
 
 ### What "LOTP" means?
 LOTP is an acronym that I use to give my project's name as a signature of mine. It means "Line On The Paper". From the start of my engineering hobby, I usually start a project on a paper with some sketches and ideas. It refers to the root branch of the start of the project.

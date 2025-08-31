@@ -1,5 +1,6 @@
 <"../std6502.l">
-zp{
+
+zp[0::256]{
   return_buf: 0.(16)
 }
 
@@ -7,7 +8,7 @@ consts[0x4000]{
   hellow: "hello world\0"
 }
 
-start[0x8000]:
+start[0x8000::start + 160]:
 {
   emu_puts consts.hellow
   emu_putchar "a"
@@ -28,16 +29,17 @@ start[0x8000]:
 }
 emu_return 0
 
-copy_return_buffer:
-  ldx# 16
-  {
-    loop:
-    lda emu_return_address, x
-    sta zp.return_buf, x
-    dex
-    bne loop
+sub[0xA000 :: 0xB000]{
+  copy_return_buffer:{
+    ldx# 16
+      loop:
+      lda emu_return_address, x
+      sta zp.return_buf, x
+      dex
+      bne loop
+    rts
   }
-rts
+}
 
 reset_vectors[0xfffa]:
   0.(2);start;0.(2)

@@ -32,6 +32,8 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 						char next = fgetc(file);
 						if(next == '<'){
 							token.id = BITSHIFT_L;
+							token.text[0] = cr;
+							token.text[1] = next;
 						}else{
 							if(next != EOF) fseek(file, -1, SEEK_CUR);
 							token.id=MACRO_O;
@@ -41,6 +43,8 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 						char next = fgetc(file);
 						if(next == '>'){
 							token.id = BITSHIFT_R;
+							token.text[0] = cr;
+							token.text[1] = next;
 						}else{
 							if(next != EOF) fseek(file, -1, SEEK_CUR);
 							token_t t1; hh_darray_get(tokens, hh_darray_get_item_fill(tokens)-1, &t1);
@@ -76,7 +80,17 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		if(cr == '{') token.id=CBRAC_O;
 		if(cr == '}') token.id=CBRAC_C;
 		if(cr == '#') token.id=HASH;
-		if(cr == ':') token.id=COLON;
+		if(cr == ':'){
+						char next = fgetc(file);
+						if(next == ':'){
+							token.id = RANGE;
+							token.text[0] = cr;
+							token.text[1] = next;
+						}else{
+							if(next != EOF) fseek(file, -1, SEEK_CUR);
+							token.id=COLON;
+						}
+					}
 		if(cr == '+') token.id=PLUS;
 		if(cr == '-') token.id=MINUS;
 		if(cr == '/') token.id=SLASH;
@@ -246,6 +260,7 @@ const char* token_id_to_string(TOKEN_ID id){
 		case DOT: return "DOT";
 		case COMMA: return "COMMA";
 		case INDEX: return "INDEX";
+		case RANGE: return "RANGE";
 		default: return "UNKNOWN";
 	}
 }

@@ -29,13 +29,14 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   // Initialize other properties of assembler
   lasm_assembler.tokens = tokens;
   lasm_assembler.output_file = output;
+  lasm_assembler.last_address_set = 0;
+  lasm_assembler.current_address_limit = -1;
   hh_darray_init(&lasm_assembler.backward_patches, sizeof(expression_t));
   //...
   if(lasm_scout_namespace(tokens, 0, &lasm_assembler.global_namespace) == (size_t)-1) return ERR;
   //...
   token_t *token = hh_darray_get_reference(tokens, 0);
   while(hh_darray_get_fill(tokens) > 0){
-    uint8_t expression_flag = 0;
     //====================================
     // Handle word token
     if(token->id == WORD){
@@ -54,6 +55,12 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
             uint64_t eval_value = hh_bigint_get_uint64(&value);
             fseek(lasm_assembler.output_file, eval_value, SEEK_SET);
+            lasm_assembler.last_address_set = eval_value;
+            if(token->id == RANGE){
+              hh_darray_pop(tokens, 0, 0); // Consume range
+              if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+              lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
+            }else lasm_assembler.current_address_limit = -1;
             if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
             if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
           }
@@ -82,8 +89,15 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             find->value = hh_bigint_get_uint64(&value);
             find->is_evaluated = 1;
             fseek(lasm_assembler.output_file, find->value, SEEK_SET);
+            lasm_assembler.last_address_set = find->value;
+            if(token->id == RANGE){
+              hh_darray_pop(tokens, 0, 0); // Consume range
+              if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+              lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
+            }else lasm_assembler.current_address_limit = -1;
             if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
             if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
+            hh_bigint_deinit(&value);
           }
           // 'word:'
           else{
@@ -157,6 +171,12 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
       uint64_t eval_val = hh_bigint_get_uint64(&value);
       fseek(lasm_assembler.output_file, eval_val, SEEK_SET);
+      lasm_assembler.last_address_set = eval_val;
+      if(token->id == RANGE){
+        hh_darray_pop(tokens, 0, 0); // Consume range
+        if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+        lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
+      }else lasm_assembler.current_address_limit = -1;
       if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
       if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
     }
@@ -168,14 +188,12 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       return ERR;
     }
     //==========================================================
-    // Evaluate expressions
-    if(expression_flag){
-      hh_bigint_t value; hh_bigint_init(&value, 0);
-      if(lasm_parse_and_eval_expression(tokens, &value, 1, 0, 0) == ERR) return ERR;
-      fwrite(value.data, 1, value.size, lasm_assembler.output_file);
-      hh_bigint_deinit(&value);
+    if(lasm_assembler.current_address_limit < lasm_get_file_size()){
+      printf(TAG);
+      print_error_loc(token);
+      printf("Size limit exceeded. Current limit is from %zu to %zu but file size exceeded at %zu\n", lasm_assembler.last_address_set, lasm_assembler.current_address_limit, lasm_get_file_size());
+      return ERR;
     }
-    //==========================================================
     // Expect newline
     if(lasm_expect_and_skip_id(tokens, NEWLINE) == ERR) return ERR;
   }

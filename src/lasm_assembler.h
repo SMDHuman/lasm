@@ -33,6 +33,8 @@ uint8_t lasm_label_deinit(label_t *label);
 
 typedef struct{
   uint8_t addressing_size; // Size of label in bytes
+  size_t last_address_set;
+  size_t current_address_limit;
   hh_darray_t backward_patches; // Patches to apply after first pass
   namespace_t *current_namespace;
   hh_darray_t *tokens; // Currently processing tokens

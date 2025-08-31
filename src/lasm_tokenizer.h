@@ -47,6 +47,7 @@ typedef enum{
 	DOT,
 	COMMA,
 	INDEX,
+	RANGE,
 }TOKEN_ID;
 
 typedef struct{
