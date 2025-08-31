@@ -2,10 +2,14 @@
 CC := cc
 CFLAGS := -ggdb -Wall -Wextra -I include
 
-std6502: std6502.c
-	$(CC) -o $@ $< $(CFLAGS)
+
+std6502: std6502.c build
+	$(CC) -o build/$@ $< $(CFLAGS)
+
+build:
+	mkdir -p build
 
 clean:
-	rm -f std6502
+	rm -f build/*
 
 all: clean std6502
