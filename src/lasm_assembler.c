@@ -62,6 +62,11 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             hh_darray_pop(tokens, 0, 0); // Consume name
             if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
           }
+        }else{
+          printf(TAG);
+          print_error_loc(token);
+          printf("Namespace named '%s' already exists in same namespace at '%s':%d:%d\n", token->text, lasm_assembler.current_namespace->name.filename, lasm_assembler.current_namespace->name.line, lasm_assembler.current_namespace->name.col);
+          return ERR;
         }
       }
       // 'word...:'
@@ -252,12 +257,10 @@ uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result,
 size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t *namespace){
   size_t i = start_from;
   while(i < hh_darray_get_item_fill(tokens)){
-    token_t* token = hh_darray_get_reference(tokens, i++);
+    token_t* token = hh_darray_get_reference(tokens, i);
     if(token->id == WORD){
-      token_t *next_token = hh_darray_get_reference(tokens, i);
       // 'word...{'
       if(lasm_is_lineend_id(tokens, i, CBRAC_O)){
-        i++;
         namespace_t* find = lasm_find_namespace_reachable_namespace(namespace, token->text);
         if(!find){
           namespace_t temp = {.constant = 1,
@@ -268,7 +271,6 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
           namespace_t* child_ns = hh_darray_get_end_reference(&namespace->childs);
           hh_darray_init(&child_ns->childs, sizeof(namespace_t));
           hh_darray_init(&child_ns->labels, sizeof(label_t));
-          i--;
           token_t *skip_tokens = hh_darray_get_reference(tokens, i);
           while(skip_tokens->id != CBRAC_O){
             i++;
@@ -291,12 +293,13 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
           label_t* new_label = hh_darray_get_end_reference(&namespace->labels);
           new_label->name = *token;
           // 'word[...]:'
+          token_t *next_token = hh_darray_get_reference(tokens, i+1);
           if(next_token->id == SBRAC_O){
-            i++;
             new_label->is_vector = 1;
             new_label->is_evaluated = 0;
             // Skip to colon
             size_t level_count = 1;
+            i += 2; // consume name and open bracket
             while(level_count > 0){
               token_t *skip_token = hh_darray_get_reference(tokens, i++);
               if(skip_token->id == SBRAC_O) level_count++;
@@ -305,6 +308,7 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
           }
           // 'word:'
           else{
+            i += 1; //consume name
             new_label->is_vector = 0;
             new_label->is_evaluated = 0;
           }
@@ -315,15 +319,21 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
           return -1;
         }
         // Skip to colon
-        token_t *skip_token;
-        do{
-          skip_token = hh_darray_get_reference(tokens, i);
-          i++;
-        }while(skip_token->id != COLON);
+        token_t *skip_token = hh_darray_get_reference(tokens, i);
+        if(skip_token->id != COLON){
+          printf(TAG);
+          print_error_loc(token);
+          printf("Expected ':' but got '%s'\n", skip_token->text);
+          return -1;
+        }
+      }
+      else{
+        i++;
       }
     }
     else if(token->id == CBRAC_O){
       size_t level_count = 1;
+      i++;
       while(level_count > 0){
         token_t *skip_token = hh_darray_get_reference(tokens, i++);
         if(skip_token->id == CBRAC_O) level_count++;
@@ -331,7 +341,11 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
       }
     }
     else if(token->id == CBRAC_C){
+      i++;
       return i;
+    }
+    else{
+      i++;
     }
   }
   return i;
@@ -486,11 +500,14 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
   }else if(node->token.id == STRING_DB){
     hh_bigint_resize(number, strlen(node->token.text));
     uint8_t backslash = 0;
-    uint8_t chr = node->token.text[0];
-    for(size_t i = 0; chr != 0; i++){
+    size_t backslash_count = 0;
+    uint8_t chr;
+    for(size_t i = 0; ; i++){
       chr = node->token.text[i];
+      if(chr == '\0') break;
       if(chr == '\\' && !backslash){
         backslash = 1;
+        backslash_count++;
         continue;
       }
       if(backslash){
@@ -510,7 +527,7 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
         }
         backslash = 0;
       }
-      hh_bigint_set_at(number, chr, i);
+      hh_bigint_set_at(number, chr, i-backslash_count);
     }
   }else if(node->token.id == WORD){
     label_t* label = lasm_find_label_reachable_namespace(lasm_assembler.current_namespace, node->token.text);

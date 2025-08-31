@@ -4,7 +4,7 @@
 // To call a function, you use 0x1100 address. 
 // Store to that address argument size you provide 
 // after the store instruction, put your instruction id and arguments
-// Return value is stored in 0x11101 - 0x11ff with 255 bytes
+// Return value is stored in 0x1101 - 0x11ff with 255 bytes
 //-----------------------------------------------------------------------------
 // std6502.c
 // github.com/SMDHuman
@@ -18,7 +18,16 @@
 /*
     void return (int32_t exit_code)      : opcode[2], exit_code[4]    : 0x0000 
     int32_t puts (uint16_t str_pointer)  : opcode[2], str_pointer[2]  : 0x0001 
+    uint8_t getchar (void)               : opcode[2]                  : 0x0002
+    int32_t putchar (uint8_t c)          : opcode[2], c[4]            : 0x0003
 */
+enum{
+  OP_RETURN = 0,
+  OP_PUTS,
+  OP_GETCHAR,
+  OP_PUTCHAR,
+};
+
 void print_all_status();
 
 uint8_t memory[65536] = {0};
@@ -74,23 +83,22 @@ void print_all_status(){
 void exec_std_functions(){
   uint16_t function_call_value = (memory[pc+4] << 8) | memory[pc+3];
   uint8_t* args = &memory[pc + 5];
-  uint8_t argc = memory[0x1100]-2;
-  // printf("Function call: %x\n", function_call_value);
-  // printf("Arguments: ");
-  // for(int i = 0; i < argc; i++) {
-  //   printf("%02x ", args[i]);
-  // }
-  // printf("\n");
+  //uint8_t argc = memory[0x1100]-2;
+  uint8_t* result = &memory[0x1101];
   switch(function_call_value){
     case 0x0000: // return
       running = 0;
       exit_code = *(int32_t*)args;
       break;
     case 0x0001: // puts
-      int* result = (int*)&memory[0x1110];
-      *result = puts((const char*)&memory[*(uint16_t*)args]);
+      *(int32_t*)result = puts((const char*)&memory[*(uint16_t*)args]);
       break;
-    // Add more cases for other functions here
+    case 0x0002: // getchar
+      *(int32_t*)result = getchar();
+      break;
+    case 0x0003: // putchar
+      putchar((uint8_t)*args);
+      break;
   }
 }
 

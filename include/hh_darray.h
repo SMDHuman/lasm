@@ -4,7 +4,7 @@
 // implement the functions of the library
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 27.08.2025
+// Last Update	: 31.08.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_DARRAY_INIT_SIZE
 #define HH_DARRAY_INIT_SIZE 16
@@ -213,7 +213,7 @@ void hh_darray_clear(hh_darray_t* array);
 	}
 	//-----------------------------------------------------------------------------
 	void* hh_darray_get_reference(hh_darray_t* array, size_t index){
-		if(index*array->word >= array->size){
+		if(index >= array->size/array->word){
 			if(array->next){
 				index -= array->size/array->word;
 				return hh_darray_get_reference(array->next, index);
