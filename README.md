@@ -40,6 +40,12 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
 * When you `DEFINE` a macro like this, whenever assembler sees 'recall_name', it will replace it with what comes after the macro's definition.
   ```
   <recall_name and other things>
+  recall_name; recall_name
+  ```
+  This code translates to
+  ```
+  and other things
+  and other things
   ```
   
 * `DEFINE WITH ARGS` macro is identical to normal define macro, but there is some positional arguments that you can call like ```recall_name salam, sausage```
@@ -47,6 +53,11 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
   <recall_name <arg_name> <another_arg>
     and other things <arg_name> with <another_arg>
   >
+  recall_name fizz, buzz 
+  ```
+  This code translates to
+  ```
+  and other things fizz with buzz
   ```
 
 * `IF DEFINE` is a controller for macro parser to enable certain portion of code or block it
