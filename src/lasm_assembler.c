@@ -31,6 +31,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   lasm_assembler.output_file = output;
   lasm_assembler.last_address_set = 0;
   lasm_assembler.current_address_limit = -1;
+  lasm_assembler.last_address_setter = (token_t){0};
   hh_darray_init(&lasm_assembler.backward_patches, sizeof(expression_t));
   //...
   if(lasm_scout_namespace(tokens, 0, &lasm_assembler.global_namespace) == (size_t)-1) return ERR;
@@ -54,12 +55,28 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             hh_bigint_t value; hh_bigint_init(&value, 0);
             if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
             uint64_t eval_value = hh_bigint_get_uint64(&value);
+            if((lasm_assembler.current_address_limit != (size_t)-1))
+            { 
+              if(lasm_assembler.last_address_setter.id == WORD){
+                printf(TAG);
+                if(lasm_get_file_size() < lasm_assembler.last_address_set)
+                  printf("'%s' vector range size: %d\n", lasm_assembler.last_address_setter.text, 0);
+                else
+                  printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
+              }
+              if(eval_value < lasm_assembler.current_address_limit){
+                printf(TAG);
+                print_error_loc(token);
+                printf("Vector overlaps with previous vector range. Previous one end at %lu but this starts at %lu\n", lasm_assembler.current_address_limit, eval_value);
+              }
+            }
             fseek(lasm_assembler.output_file, eval_value, SEEK_SET);
             lasm_assembler.last_address_set = eval_value;
             if(token->id == RANGE){
               hh_darray_pop(tokens, 0, 0); // Consume range
               if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
               lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
+              lasm_assembler.last_address_setter = find->name;
             }else lasm_assembler.current_address_limit = -1;
             if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
             if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
@@ -87,6 +104,21 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             hh_bigint_t value; hh_bigint_init(&value, 0);
             if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
             find->value = hh_bigint_get_uint64(&value);
+            if((lasm_assembler.current_address_limit != (size_t)-1))
+            { 
+              if(lasm_assembler.last_address_setter.id == WORD){
+                printf(TAG);
+                if(lasm_get_file_size() < lasm_assembler.last_address_set)
+                  printf("'%s' vector range size: %d\n", lasm_assembler.last_address_setter.text, 0);
+                else
+                  printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
+              }
+              if(find->value < lasm_assembler.current_address_limit){
+                printf(TAG);
+                print_error_loc(token);
+                printf("Vector overlaps with previous vector range. Previous one end at %lu but this starts at %lu\n", lasm_assembler.current_address_limit, find->value);
+              }
+            }
             find->is_evaluated = 1;
             fseek(lasm_assembler.output_file, find->value, SEEK_SET);
             lasm_assembler.last_address_set = find->value;
@@ -94,6 +126,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
               hh_darray_pop(tokens, 0, 0); // Consume range
               if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
               lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
+              lasm_assembler.last_address_setter = find->name;
             }else lasm_assembler.current_address_limit = -1;
             if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
             if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
@@ -170,12 +203,28 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       hh_bigint_t value; hh_bigint_init(&value, 0);
       if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
       uint64_t eval_val = hh_bigint_get_uint64(&value);
+      if((lasm_assembler.current_address_limit != (size_t)-1))
+      { 
+        if(lasm_assembler.last_address_setter.id == WORD){
+          printf(TAG);
+          if(lasm_get_file_size() < lasm_assembler.last_address_set)
+            printf("'%s' vector range size: %d\n", lasm_assembler.last_address_setter.text, 0);
+          else
+          printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
+        }
+        if(eval_val < lasm_assembler.current_address_limit){
+          printf(TAG);
+          print_error_loc(token);
+          printf("Vector overlaps with previous vector range. Previous one end at %lu but this starts at %lu\n", lasm_assembler.current_address_limit, eval_val);
+        }
+      }
       fseek(lasm_assembler.output_file, eval_val, SEEK_SET);
       lasm_assembler.last_address_set = eval_val;
       if(token->id == RANGE){
         hh_darray_pop(tokens, 0, 0); // Consume range
         if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
         lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
+        lasm_assembler.last_address_setter = *token;
       }else lasm_assembler.current_address_limit = -1;
       if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
       if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
