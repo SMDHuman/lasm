@@ -181,9 +181,11 @@ uint8_t lasm_6502_assemble(void){
     hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'A'
   }
   // Indirect mode
+  // TODO: Do the indirect mode recognition better later. Please.
   else if(token->id == RBRAC_O && 
           (lasm_is_lineend_id(lasm_assembler.tokens, 0, RBRAC_C) || 
-          lasm_is_lineend_text(lasm_assembler.tokens, 0, "Y"))){
+          lasm_is_lineend_text(lasm_assembler.tokens, 0, "Y") ||
+          lasm_is_lineend_text(lasm_assembler.tokens, 0, "y"))){
     addr_mode = ADM_IND;
     hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume '('
   }

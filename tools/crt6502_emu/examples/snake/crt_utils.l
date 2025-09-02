@@ -1,50 +1,18 @@
-zp{
-  pixel_address: 0.(2)
-  x: 0
-  y: 0
-  color: 0xff 
-}
+
 <WIDTH 40>
 <HEIGHT 30>
-RESOLUTION[0x1000 - 4]: WIDTH; HEIGHT
-KEY_INPUT[0x1000 - 2]: 0.(2)
-DISPLAY_BUF[0x1000:: DISPLAY_BUF + (WIDTH * HEIGHT)]:
+<HALT_ADDRESS 0xffff>
+<LOG_ON_WRITE_ADDRESS 0xFFBC>
+RESOLUTION  [0x1000 - 4 :: 0x1000 - 2                    ]:
+KEY_INPUT   [0x1000 - 2 :: 0x1000                        ]:
+DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]: 
+    0.(WIDTH * HEIGHT) // Just to see how much space buffer occupies after assembling
 
-main[0x8000::0x9000]:
-  {loop_y: 
-    {loop_x:
-      set_pixel_abs zp.x, zp.y, zp.color
-      {
-        lda zp.color
-        clc; adc# 15
-        sta zp.color
-      }
-      lda zp.x
-      clc; adc# 1
-      sta zp.x
-      cmp# WIDTH
-      bne loop_x
-    }
-    lda# 0
-    sta zp.x
-    lda zp.y
-    clc; adc# 1
-    sta zp.y
-    cmp# HEIGHT
-    bne loop_y
-  }
-  lda zp.color
-  clc; adc# 1
-  sta zp.color
-  // Check if space key pressed
-  lda KEY_INPUT
-  cmp# 32
-  beq exit_main
-  jmp main
-exit_main:brk
+<UTIL_ZP
+    pixel_address: 0.(2)
+>
 
-
-subs[0xA000::0xB000]{
+<UTIL_IMPLEMENTATION
   calculate_pixel_address{x:0;y:0}
   calculate_pixel_address:{
     lda calculate_pixel_address.y
@@ -87,8 +55,7 @@ subs[0xA000::0xB000]{
       STA  multiply.b
     rts
   }
-}
-
+>
 <set_pixel_imm <x> <y> <color>
   ldx# <x>
   ldy# <y>
@@ -107,8 +74,9 @@ subs[0xA000::0xB000]{
   ldx# 0
   sta (zp.pixel_address,x)
 >
-
-reset_vectors[0xfffa]:
-  0.(2);main;0xffff
-
-
+<SET_MEM_IMM <addrs> <val>
+  lda#<val>;sta <addrs>
+>
+<RGB332 <r> <g> <b>
+  (<r> & 0x7) << 5 | (<g> & 0x7) << 2 | (<b> & 0x3)
+>

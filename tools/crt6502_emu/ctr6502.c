@@ -6,15 +6,26 @@
 #define HH_ARGPARSE_IMPLEMENTATION
 #include "hh_argparse.h"
 
-#define CRT_BUFFER_ADDRESS 0x1000
-#define INPUT_KEY_ADDRESS CRT_BUFFER_ADDRESS - 2
+enum{
+  COLOR_RGB332
+};
 
-#define CRT_WIDTH 80
-#define CRT_HEIGHT 60
+#define HALT_ADDRESS 0xFFFF
+#define CRT_WIDTH_ADDRESS 0x1000 - 4
+#define CRT_HEIGHT_ADDRESS 0x1000 - 3
+#define INPUT_KEY_ADDRESS 0x1000 - 2
+#define CRT_BUFFER_ADDRESS 0x1000
+#define LOG_ON_WRITE_ADDRESS 0xFFBC
+
+#define CRT_COLOR_MODE COLOR_RGB332 
+#define CRT_WIDTH memory[CRT_WIDTH_ADDRESS]
+#define CRT_HEIGHT memory[CRT_HEIGHT_ADDRESS]
 #define WIN_WIDTH 800
 #define WIN_HEIGHT 600
 
 uint8_t memory[65536] = {0};
+
+Color color_converter(uint8_t memcolor);
 
 int main(int argc, char *argv[]) {
   hh_argparse_t* argparse = hh_argparse_init(argc, argv);
@@ -46,14 +57,19 @@ int main(int argc, char *argv[]) {
   double last_draw = GetTime();
   uint8_t cpu_running = 1;
   while(!WindowShouldClose()){
-    // Halt if PC reaches 0xffff
-    if(pc == 0xffff && cpu_running){
+    // Halt if PC reaches HALT_ADDRESS
+    if(pc == HALT_ADDRESS && cpu_running){
       cpu_running = 0;
       printf("CPU Halted\n");
     }
     // Execute the next instruction
     if(cpu_running){
       step6502();
+      // print first 32 byte of memory
+      // for(int i = 0; i < 18; i++) {
+      //   printf("0x%02X, ", read6502(i));
+      // }
+      // printf("\n");
     }
     // Drawing and Input handling
     if(GetTime() - last_draw > 1.0 / 60.0) {
@@ -61,13 +77,10 @@ int main(int argc, char *argv[]) {
       for(int y = 0; y < CRT_HEIGHT; y++) {
         for(int x = 0; x < CRT_WIDTH; x++) {
           uint8_t color = read6502(CRT_BUFFER_ADDRESS + y * CRT_WIDTH + x);
-          uint8_t red = (color & 0xE0);
-          uint8_t green = (color & 0x1C) << 3;
-          uint8_t blue = (color & 0x03) << 6;
           float pixel_size_x = (float)WIN_WIDTH / CRT_WIDTH;
           float pixel_size_y = (float)WIN_HEIGHT / CRT_HEIGHT;
           float pixel_size = pixel_size_y < pixel_size_x ? pixel_size_y : pixel_size_x;
-          DrawRectangle(x * pixel_size, y * pixel_size, pixel_size, pixel_size, (Color){red, green, blue, 255});
+          DrawRectangle(x * pixel_size, y * pixel_size, pixel_size, pixel_size, color_converter(color));
         }
       }
       EndDrawing();
@@ -89,12 +102,33 @@ int main(int argc, char *argv[]) {
   hh_argparse_deinit(argparse);  
   return 0;
 }
-
+//-----------------------------------------------------------------------------
+Color color_converter(uint8_t memcolor){
+  switch (CRT_COLOR_MODE)
+  {
+  case COLOR_RGB332:
+    return (Color){
+      .r = (memcolor & 0xE0),
+      .g = (memcolor & 0x1C) << 3,
+      .b = (memcolor & 0x03) << 6,
+      .a = 255
+    };
+  
+  default:
+    break;
+  }
+}
 //-----------------------------------------------------------------------------
 uint8_t read6502(uint16_t address) {
-
   return memory[address];
 }
 void write6502(uint16_t address, uint8_t value) {
+  if(LOG_ON_WRITE_ADDRESS == address || address == 11 || address == 12){
+    printf("PC: %04X\n", pc);
+    printf("A: %02X, X: %02X, Y: %02X\n", a, x, y);
+    printf("STATUS: %02X\n", status);
+    printf("writing %02X to address: %04X\n", value, address);
+    printf("-------------------\n");
+  }
   memory[address] = value;
 }

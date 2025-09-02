@@ -58,9 +58,9 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             if(lasm_assembler.last_address_setter.id == WORD){
               printf(TAG);
               if(lasm_get_file_size() < lasm_assembler.last_address_set)
-              printf("'%s' vector range size: %d\n", lasm_assembler.last_address_setter.text, 0);
+              printf("'%s' filling %d bytes\n", lasm_assembler.last_address_setter.text, 0);
               else
-              printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
+              printf("'%s' filling %lu bytes\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
             }
             if((lasm_assembler.current_address_limit != (size_t)-1))
             { 
@@ -107,9 +107,9 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             if(lasm_assembler.last_address_setter.id == WORD){
               printf(TAG);
               if(lasm_get_file_size() < lasm_assembler.last_address_set)
-              printf("'%s' vector range size: %d\n", lasm_assembler.last_address_setter.text, 0);
+              printf("'%s' filling %d bytes\n", lasm_assembler.last_address_setter.text, 0);
               else
-              printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
+              printf("'%s' filling %lu bytes\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
             }
             if((lasm_assembler.current_address_limit != (size_t)-1))
             {
@@ -206,9 +206,9 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       if(lasm_assembler.last_address_setter.id == WORD){
         printf(TAG);
         if(lasm_get_file_size() < lasm_assembler.last_address_set)
-          printf("'%s' vector range size: %d\n", lasm_assembler.last_address_setter.text, 0);
+          printf("'%s' filling %d bytes\n", lasm_assembler.last_address_setter.text, 0);
         else
-        printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
+        printf("'%s' filling %lu bytes\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
       }
       if((lasm_assembler.current_address_limit != (size_t)-1))
       {
@@ -253,9 +253,9 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   if(lasm_assembler.last_address_setter.id == WORD){
     printf(TAG);
     if(lasm_get_file_size() < lasm_assembler.last_address_set)
-      printf("'%s' vector range size: %d\n", lasm_assembler.last_address_setter.text, 0);
+      printf("'%s' filling %d bytes\n", lasm_assembler.last_address_setter.text, 0);
     else
-      printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
+      printf("'%s' filling %lu bytes\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
   }
   return 0;
 }

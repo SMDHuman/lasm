@@ -123,6 +123,9 @@ uint8_t hh_bigint_deinit(hh_bigint_t *bigint){
 uint8_t hh_bigint_resize(hh_bigint_t *bigint, const size_t new_capacity){
     if(new_capacity != bigint->size){
         bigint->data = realloc(bigint->data, new_capacity);
+        if(new_capacity > bigint->size){
+            memset(&bigint->data[bigint->size], 0, new_capacity - bigint->size);
+        }
         bigint->size = new_capacity;
     }
     if(bigint->data == NULL){
