@@ -1,6 +1,6 @@
 
 // Place this where you want to place subroutines of this module
-<subroutine_implementations
+<MATH_IMPLEMENTATIONS
   math{
     add_uint16{out: a: 0.(2); b: 0.(2)}
     add_uint16:{

@@ -7,6 +7,8 @@
 #include "hh_argparse.h"
 
 #define CRT_BUFFER_ADDRESS 0x1000
+#define INPUT_KEY_ADDRESS CRT_BUFFER_ADDRESS - 2
+
 #define CRT_WIDTH 80
 #define CRT_HEIGHT 60
 #define WIN_WIDTH 800
@@ -53,7 +55,7 @@ int main(int argc, char *argv[]) {
     if(cpu_running){
       step6502();
     }
-    // Drawing
+    // Drawing and Input handling
     if(GetTime() - last_draw > 1.0 / 60.0) {
       BeginDrawing();
       for(int y = 0; y < CRT_HEIGHT; y++) {
@@ -69,6 +71,15 @@ int main(int argc, char *argv[]) {
         }
       }
       EndDrawing();
+      // Inputs
+      uint16_t key = (uint16_t)GetKeyPressed();
+      if (key > 0) {
+        printf("Key pressed: %d\n", key);
+        *(uint16_t*)&memory[INPUT_KEY_ADDRESS] = key;
+      }else if(IsKeyReleased(*(uint16_t*)&memory[INPUT_KEY_ADDRESS])){
+        printf("Key Released: %d\n", *(uint16_t*)&memory[INPUT_KEY_ADDRESS]);
+        *(uint16_t*)&memory[INPUT_KEY_ADDRESS] = 0;
+      }
       last_draw = GetTime();
     }
   }

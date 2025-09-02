@@ -7,6 +7,7 @@ zp{
 
 <WIDTH 80>
 <HEIGHT 60>
+KEY_INPUT[0x1000 - 2 :: 0x1000]:
 DISPLAY_BUF[0x1000:: DISPLAY_BUF + (WIDTH * HEIGHT)]:
 
 main[0x8000::0x9000]:
@@ -35,8 +36,12 @@ main[0x8000::0x9000]:
   lda zp.color
   clc; adc# 1
   sta zp.color
+  // Check if space key pressed
+  lda KEY_INPUT
+  cmp# 32
+  beq exit_main
   jmp main
-  brk
+exit_main:brk
 
 
 subs[0xA000::0xB000]{
@@ -56,10 +61,10 @@ subs[0xA000::0xB000]{
     adc# 0
     sta zp.pixel_address+1
     // Add DISPLAY_BUF offset
-    lda# DISPLAY_BUF[0]
+    lda# DISPLAY_BUF & 0xff
     adc zp.pixel_address
     sta zp.pixel_address
-    lda# DISPLAY_BUF[1]
+    lda# (DISPLAY_BUF >> 8) & 0xff
     adc# 0
     adc zp.pixel_address+1
     sta zp.pixel_address+1

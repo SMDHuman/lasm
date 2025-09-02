@@ -64,7 +64,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             }
             if((lasm_assembler.current_address_limit != (size_t)-1))
             { 
-              if(eval_value < lasm_assembler.current_address_limit){
+              if(eval_value < lasm_assembler.current_address_limit && lasm_assembler.last_address_set < eval_value){
                 printf(TAG);
                 print_error_loc(token);
                 printf("Vector overlaps with previous vector range. Previous one end at %lu but this starts at %lu\n", lasm_assembler.current_address_limit, eval_value);
@@ -112,8 +112,8 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
               printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
             }
             if((lasm_assembler.current_address_limit != (size_t)-1))
-            { 
-              if(find->value < lasm_assembler.current_address_limit){
+            {
+              if(find->value < lasm_assembler.current_address_limit && lasm_assembler.last_address_set < find->value){
                 printf(TAG);
                 print_error_loc(token);
                 printf("Vector overlaps with previous vector range. Previous one end at %lu but this starts at %lu\n", lasm_assembler.current_address_limit, find->value);
@@ -211,8 +211,8 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         printf("'%s' vector range size: %lu\n", lasm_assembler.last_address_setter.text, lasm_get_file_size() - lasm_assembler.last_address_set);
       }
       if((lasm_assembler.current_address_limit != (size_t)-1))
-      { 
-        if(eval_val < lasm_assembler.current_address_limit){
+      {
+        if(eval_val < lasm_assembler.current_address_limit && lasm_assembler.last_address_set < eval_val){
           printf(TAG);
           print_error_loc(token);
           printf("Vector overlaps with previous vector range. Previous one end at %lu but this starts at %lu\n", lasm_assembler.current_address_limit, eval_val);
