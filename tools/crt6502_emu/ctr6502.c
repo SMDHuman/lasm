@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
   fclose(file);
 
   // Run the 6502 emulator
+  SetTraceLogLevel(LOG_ERROR); 
   InitWindow(WIN_WIDTH, WIN_HEIGHT, "CRT 6502 Emulator");
   reset6502();
   double last_draw = GetTime();
