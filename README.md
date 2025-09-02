@@ -8,17 +8,16 @@ It has all the necessary macros that we love from the C language, namespaces for
   ```bash
   git clone https://github.com/SMDHuman/lasm.git
   cd lasm
-  make
-  cd build
-  ./lasm --help
+  make install
+  lasm --help
   ``` 
   Currently you only need to give the one input file and a machine name to assemble a program.
   ```bash
-  ./lasm ../examples/basic_syntax.l -m 6502
+  lasm examples/basic_syntax.l -m 6502
   ```
   You can optionally add an output path for the binary
   ```bash
-  ./lasm ../examples/basic_syntax.l -m 6502 -o bin/basic_syntax.bin
+  lasm examples/basic_syntax.l -m 6502 -o bin/basic_syntax.bin
   ```
 ## Features 
 ### Comments and New Lines
