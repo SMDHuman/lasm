@@ -13,6 +13,7 @@ things[123]:
 
 {
 start[17+zp.stack.end]:
+(0b11010011 & 0xf0) >> 4 | 0x10
 start + 1
 global_out
 LABEL -1

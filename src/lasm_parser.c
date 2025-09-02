@@ -5,6 +5,7 @@
 #include "lasm_parser.h"
 #include "lasm_assembler.h"
 
+static const char TAG[] = "[PRSR]";
 static int32_t tokens_precedence(token_t *token);
 expression_tree_t* relocate_expression_tree(expression_tree_t *root, expression_t* current_expr, expression_t* target_expr);
 
@@ -30,10 +31,11 @@ uint8_t parser_expression(hh_darray_t *tokens, expression_t *expr){
     hh_darray_append(&expr->expression_tree_buffer, 0); // create new node
     expression_tree_t *new_node = hh_darray_get_end_reference(&expr->expression_tree_buffer);
     new_node->left = (struct expression_tree_t *)expr->root;
-    if(token->id == PLUS || token->id == MINUS || token->id == ASTERISK || token->id == SLASH || token->id == INDEX || token->id == DOT){
+    if(tokens_precedence(token) > 0){
       hh_darray_pop(tokens, 0, &new_node->token);
       expr->last_low_precedence = tokens_precedence(&new_node->token);
     }else{
+      printf(TAG);
       print_error_loc(token);
       printf("Expected an operator (+, -, *, /) but got '%s'\n", token->text);
       return ERR;
@@ -80,6 +82,7 @@ expression_tree_t* parser_expression_right(hh_darray_t *tokens, expression_t *ex
     hh_darray_deinit(&isolated_expr.expression_tree_buffer);
   }
   else{
+    printf(TAG);
     print_error_loc(token);
     printf("Unknown token for parsing '%s'\n", token->text);
     return NULL; // ERROR
@@ -116,9 +119,20 @@ expression_tree_t* parser_expression_right(hh_darray_t *tokens, expression_t *ex
 }
 
 int32_t tokens_precedence(token_t *token){
-  if(token->id == PLUS || token->id == MINUS) return 2;
-  if(token->id == ASTERISK || token->id == SLASH) return 3;
-  if(token->id == INDEX || token->id == DOT) return 4;
+  int32_t precedence = 1;
+  if(token->id == BITW_OR) return precedence;
+  precedence++;
+  if(token->id == BITW_XOR) return precedence;
+  precedence++;
+  if(token->id == BITW_AND) return precedence;
+  precedence++;
+  if(token->id == BITSHIFT_L || token->id == BITSHIFT_R) return precedence;
+  precedence++;
+  if(token->id == PLUS || token->id == MINUS) return precedence;
+  precedence++;
+  if(token->id == ASTERISK || token->id == SLASH) return precedence;
+  precedence++;
+  if(token->id == INDEX || token->id == DOT) return precedence;
   return 0; // Default precedence for other tokens
 }
 

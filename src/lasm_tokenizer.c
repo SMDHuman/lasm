@@ -96,6 +96,9 @@ uint8_t lasm_tokenize(FILE* file, char *filename, hh_darray_t* tokens){
 		if(cr == '/') token.id=SLASH;
 		if(cr == '\\') token.id=BSLASH;
 		if(cr == '*') token.id=ASTERISK;
+		if(cr == '&') token.id=BITW_AND;
+		if(cr == '|') token.id=BITW_OR;
+		if(cr == '^') token.id=BITW_XOR;
 		if(cr == '?') token.id=QUEST;
 		if(cr == '!') token.id=EXCLA;
 		if(cr == '.') token.id=DOT;

@@ -5,7 +5,7 @@
 // functions return 255 on failure
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 28.08.2025
+// Last Update	: 02.09.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_BIGINT_H
 #define HH_BIGINT_H
@@ -44,6 +44,8 @@
 #define hbi_copy hh_bigint_copy
 #define hbi_convert_from_string hh_bigint_convert_from_string
 #define hbi_multiply hh_bigint_multiply
+#define hbi_shift_left hh_bigint_shift_left
+#define hbi_shift_right hh_bigint_shift_right
 #define hbi_normalize hh_bigint_normalize
 #endif
 //-----------------------------------------------------------------------------
@@ -83,12 +85,18 @@ uint8_t hh_bigint_is_equal(const hh_bigint_t *a, const hh_bigint_t *b);
 uint8_t hh_bigint_copy(hh_bigint_t *to, const hh_bigint_t *from);
 uint8_t hh_bigint_convert_from_string(hh_bigint_t *bigint, const char *str);
 uint8_t hh_bigint_multiply(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result);
+uint8_t hh_bigint_shift_left(const hh_bigint_t *bigint, const uint64_t position, hh_bigint_t *result);
+uint8_t hh_bigint_shift_right(const hh_bigint_t *bigint, const uint64_t position, hh_bigint_t *result);
+uint8_t hh_bigint_bitwise_or(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result);
+uint8_t hh_bigint_bitwise_xor(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result);
+uint8_t hh_bigint_bitwise_and(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result);
 uint8_t hh_bigint_normalize(hh_bigint_t *bigint);
 //uint8_t bigint_divide(const bigint_t *a, const bigint_t *b, bigint_t *result);
 //uint8_t bigint_modulo(const bigint_t *a, const bigint_t *b, bigint_t *result);
 
 //-----------------------------------------------------------------------------
 #ifdef HH_BIGINT_IMPLEMENTATION
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 //-----------------------------------------------------------------------------
 uint8_t hh_bigint_init(hh_bigint_t *bigint, int32_t init_number){
     bigint->size = INITIAL_CAPACITY;
@@ -474,6 +482,107 @@ uint8_t hh_bigint_multiply(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint
     }
     hh_bigint_normalize(&res);
     hh_bigint_copy(result, &res);
+    return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_shift_left(const hh_bigint_t *bigint, const uint64_t position, hh_bigint_t *result){
+    if(position == 0){
+        hh_bigint_copy(result, bigint);
+        return 0;
+    }
+    size_t byte_shift = position / 8;
+    uint8_t bit_shift = position % 8;
+
+    hh_bigint_t res; hh_bigint_init(&res, 0);
+    hh_bigint_resize(&res, bigint->size + byte_shift + 1); // +1 for potential overflow
+    hh_bigint_set_zero(&res);
+
+    for(size_t i = 0; i < bigint->size; i++){
+        uint16_t shifted_value = ((uint16_t)hh_bigint_get_at(bigint, i) << bit_shift);
+        hh_bigint_set_at(&res, (uint8_t)(shifted_value & 0xff), i + byte_shift);
+        hh_bigint_set_at(&res, (uint8_t)(shifted_value >> 8), i + byte_shift + 1);
+    }
+    res.sign = bigint->sign;
+    hh_bigint_normalize(&res);
+    hh_bigint_copy(result, &res);
+    hh_bigint_deinit(&res);
+    return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_shift_right(const hh_bigint_t *bigint, const uint64_t position, hh_bigint_t *result){
+    if(position == 0){
+        hh_bigint_copy(result, bigint);
+        return 0;
+    }
+    size_t byte_shift = position / 8;
+    uint8_t bit_shift = position % 8;
+
+    if(byte_shift >= bigint->size){
+        hh_bigint_set_zero(result);
+        return 0;
+    }
+
+    hh_bigint_t res; hh_bigint_init(&res, 0);
+    hh_bigint_resize(&res, bigint->size - byte_shift);
+    hh_bigint_set_zero(&res);
+
+    for(size_t i = byte_shift; i < bigint->size; i++){
+        uint16_t shifted_value = ((uint16_t)hh_bigint_get_at(bigint, i) >> bit_shift);
+        if(i - byte_shift < res.size){
+            hh_bigint_set_at(&res, (uint8_t)(shifted_value & 0xff), i - byte_shift);
+        }
+        if(bit_shift > 0 && i - byte_shift - 1 < res.size && i > byte_shift){
+            uint8_t carry_over = (uint8_t)(hh_bigint_get_at(bigint, i) << (8 - bit_shift));
+            uint8_t existing_value = hh_bigint_get_at(&res, i - byte_shift - 1);
+            hh_bigint_set_at(&res, existing_value | carry_over, i - byte_shift - 1);
+        }
+    }
+    res.sign = bigint->sign;
+    hh_bigint_normalize(&res);
+    hh_bigint_copy(result, &res);
+    hh_bigint_deinit(&res);
+    return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_bitwise_or(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result){
+    if(a == NULL || b == NULL || result == NULL) return ERR;
+
+    hh_bigint_init(result, 0);
+    hh_bigint_resize(result, MAX(a->size, b->size));
+
+    for(size_t i = 0; i < result->size; i++){
+        uint8_t a_bit = (i < a->size) ? hh_bigint_get_at(a, i) : 0;
+        uint8_t b_bit = (i < b->size) ? hh_bigint_get_at(b, i) : 0;
+        hh_bigint_set_at(result, a_bit | b_bit, i);
+    }
+    return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_bitwise_xor(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result){
+    if(a == NULL || b == NULL || result == NULL) return ERR;
+
+    hh_bigint_init(result, 0);
+    hh_bigint_resize(result, MAX(a->size, b->size));
+
+    for(size_t i = 0; i < result->size; i++){
+        uint8_t a_bit = (i < a->size) ? hh_bigint_get_at(a, i) : 0;
+        uint8_t b_bit = (i < b->size) ? hh_bigint_get_at(b, i) : 0;
+        hh_bigint_set_at(result, a_bit ^ b_bit, i);
+    }
+    return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_bitwise_and(const hh_bigint_t *a, const hh_bigint_t *b, hh_bigint_t *result){
+    if(a == NULL || b == NULL || result == NULL) return ERR;
+
+    hh_bigint_init(result, 0);
+    hh_bigint_resize(result, MAX(a->size, b->size));
+
+    for(size_t i = 0; i < result->size; i++){
+        uint8_t a_bit = (i < a->size) ? hh_bigint_get_at(a, i) : 0;
+        uint8_t b_bit = (i < b->size) ? hh_bigint_get_at(b, i) : 0;
+        hh_bigint_set_at(result, a_bit & b_bit, i);
+    }
     return 0;
 }
 //-----------------------------------------------------------------------------

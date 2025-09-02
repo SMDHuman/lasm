@@ -560,8 +560,17 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
       size_t *index = (size_t*)right_number.data;
       uint8_t num = hh_bigint_get_at(&left_number, *index);
       hh_bigint_set_zero(number); hh_bigint_set_at(number, num, 0);
-    }
-    else{
+    }else if(node->token.id == BITSHIFT_L){
+      hh_bigint_shift_left(&left_number, hh_bigint_get_uint64(&right_number), number);
+    }else if(node->token.id == BITSHIFT_R){
+      hh_bigint_shift_right(&left_number, hh_bigint_get_uint64(&right_number), number);
+    }else if(node->token.id == BITW_AND){
+      hh_bigint_bitwise_and(&left_number, &right_number, number);
+    }else if(node->token.id == BITW_XOR){
+      hh_bigint_bitwise_xor(&left_number, &right_number, number);
+    }else if(node->token.id == BITW_OR){
+      hh_bigint_bitwise_or(&left_number, &right_number, number);
+    }else{
       printf(TAG);
       print_error_loc(&node->token);
       printf("Unsupported operation: '%s'\n", node->token.text);
