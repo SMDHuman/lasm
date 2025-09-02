@@ -36,6 +36,9 @@ clean:
 install: all
 	cp $(BUILD_DIR)/lasm ~/.local/bin
 
+uninstall:
+	rm -f ~/.local/bin/lasm
+
 # Examples
 examples: example_basics example_expressions example_namespaces example_fibonacci example_6502_addressing
 
