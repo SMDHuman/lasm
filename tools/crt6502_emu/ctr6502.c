@@ -123,12 +123,5 @@ uint8_t read6502(uint16_t address) {
   return memory[address];
 }
 void write6502(uint16_t address, uint8_t value) {
-  if(LOG_ON_WRITE_ADDRESS == address || address == 11 || address == 12){
-    printf("PC: %04X\n", pc);
-    printf("A: %02X, X: %02X, Y: %02X\n", a, x, y);
-    printf("STATUS: %02X\n", status);
-    printf("writing %02X to address: %04X\n", value, address);
-    printf("-------------------\n");
-  }
   memory[address] = value;
 }
