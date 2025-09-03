@@ -59,7 +59,7 @@ DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]:
       CLC
       ADC  multiply.b
     no_add:
-      ROR a
+      ROR
       ROR  multiply.a
       DEX
       BNE  loop

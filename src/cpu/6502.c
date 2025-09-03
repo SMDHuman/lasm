@@ -169,25 +169,58 @@ uint8_t lasm_6502_assemble(void){
     hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume '#'
     addr_mode = ADM_IMM;
   }
-  // Implied mode
+  // Implied or Accumulator mode
   else if(token->id == NEWLINE){
-    addr_mode = ADM_IMPL; 
-  }
-  // Accumulator mode
-  else if(token->id == WORD && 
-          strlen(token->text) == 1 && 
-          char_upper(token->text[0]) == 'A'){
-        addr_mode = ADM_ACCUM;
-    hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'A'
+    if(inst_addrs_mods[inst_id] & ADM_IMPL) addr_mode = ADM_IMPL;
+    if(inst_addrs_mods[inst_id] & ADM_ACCUM) addr_mode = ADM_ACCUM;
   }
   // Indirect mode
   // TODO: Do the indirect mode recognition better later. Please.
-  else if(token->id == RBRAC_O && 
-          (lasm_is_lineend_id(lasm_assembler.tokens, 0, RBRAC_C) || 
-          lasm_is_lineend_text(lasm_assembler.tokens, 0, "Y") ||
-          lasm_is_lineend_text(lasm_assembler.tokens, 0, "y"))){
-    addr_mode = ADM_IND;
+  else if(token->id == RBRAC_O){
     hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume '('
+    int32_t bracet_count = 1;
+    size_t i = 0;
+    token_t* check_token;
+    while(bracet_count > 0){
+      check_token = hh_darray_get_reference(lasm_assembler.tokens, i);
+      if(check_token->id == RBRAC_O) bracet_count++;
+      else if(check_token->id == RBRAC_C) bracet_count--;
+      i++;
+    }
+    check_token = hh_darray_get_reference(lasm_assembler.tokens, i);
+    if(check_token->id == NEWLINE){
+      check_token = hh_darray_get_reference(lasm_assembler.tokens, i-3);
+      if(check_token->id == COMMA){
+        check_token = hh_darray_get_reference(lasm_assembler.tokens, i-2);
+        if(char_upper(check_token->text[0]) == 'X'){
+          addr_mode = ADM_X_IND;
+          hh_darray_pop(lasm_assembler.tokens, i-3, 0); // consume ','
+          hh_darray_pop(lasm_assembler.tokens, i-3, 0); // consume 'X'
+          hh_darray_pop(lasm_assembler.tokens, i-3, 0); // consume ')'
+        }else{
+          printf(TAG);
+          print_error_loc(token);
+          printf("Unknown register: %s\n", check_token->text);
+          return ERR;
+        }
+      }else{ 
+        addr_mode = ADM_IND;
+        hh_darray_pop(lasm_assembler.tokens, i, 0); // consume ')'
+      }
+    }else if(check_token->id == COMMA){
+      check_token = hh_darray_get_reference(lasm_assembler.tokens, i+1);
+      if(char_upper(check_token->text[0]) == 'Y'){
+        hh_darray_pop(lasm_assembler.tokens, i-1, 0); // consume ')'
+        hh_darray_pop(lasm_assembler.tokens, i-1, 0); // consume ','
+        hh_darray_pop(lasm_assembler.tokens, i-1, 0); // consume 'Y'
+        addr_mode = ADM_IND_Y;
+      }else{
+        printf(TAG);
+        print_error_loc(token);
+        printf("Unknown register: %s\n", check_token->text);
+        return ERR;
+      }
+    }
   }
   // Relative, Zero Page or Absolute mode
   else{
@@ -246,22 +279,13 @@ uint8_t lasm_6502_assemble(void){
     }
   }else if(addr_mode & ADM_IND){
     if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
-    if(next_token->id == COMMA){
-      addr_mode = ADM_IND_Y;
-      hh_bigint_resize(&value, 1);
-      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
-      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
-      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'Y'
-    }else if(char_upper(next_token->text[0]) == 'X'){
-      addr_mode = ADM_X_IND;
-      hh_bigint_resize(&value, 1);
-      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ','
-      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume 'X'
-      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
-    }else{
       hh_bigint_resize(&value, 2);
-      hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume ')'
-    }
+  }else if(addr_mode & ADM_IND_Y){
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
+      hh_bigint_resize(&value, 1);
+  }else if(addr_mode & ADM_X_IND){
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
+      hh_bigint_resize(&value, 1);
   }else if(addr_mode & ADM_REL){
     if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 1, 1) == ERR) return ERR;
     hh_bigint_resize(&value, 1);

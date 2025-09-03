@@ -267,19 +267,19 @@ subs[0xA000::0xB000]{
                 jmp break
             not_arrow_up:
         not_arrow:
-        lda KEY_INPUT+1 // check upper byte
-        cmp# 0x00 
-        bne not_key
-            lda KEY_INPUT // check lower byte
-            cmp# 32
-            bne not_spacebar
-                jsr subs.grow_snake 
-        jsr subs.erase_food
-        jsr subs.pick_food_place
-        jsr subs.draw_food
-                jmp break
-            not_spacebar:
-        not_key:
+        //lda KEY_INPUT+1 // check upper byte
+        //cmp# 0x00 
+        //bne not_key
+        //    lda KEY_INPUT // check lower byte
+        //    cmp# 32
+        //    bne not_spacebar
+        //        jsr subs.grow_snake 
+        //        jsr subs.erase_food
+        //        jsr subs.pick_food_place
+        //        jsr subs.draw_food
+        //        jmp break
+        //    not_spacebar:
+        //not_key:
     break:
     rts
     }
@@ -361,7 +361,7 @@ subs[0xA000::0xB000]{
     // must be in RAM, you can see why......
     rand_8:{
             LDA	zp.r_seed   // get seed
-            ASL A           // shift byte
+            ASL             // shift byte
             BCC	no_eor      // branch if no carry
 
             EOR	#0xCF        // else EOR with $CF
