@@ -121,27 +121,26 @@ subs[0xA000::0xB000]{
     }
     //-------------------------------------------------------------------------
     draw_snake:{
-        // Draw Head
-        set_pixel_abs zp.snake.head.x, zp.snake.head.y, zp.snake.color
         // Draw body
-        clc;
-        ldy zp.snake.body_stack.size
-        sty zp.snake.body_stack.read_head
-        cpy# 0
-        beq end_body_draw
-        loop_body_draw:
-            ldy zp.snake.body_stack.read_head
-            dey
-                lda (zp.snake.body_stack.ptr),y
-                sta zp.snake.body_stack.temp_x
-            dey
-                lda (zp.snake.body_stack.ptr),y
-                sta zp.snake.body_stack.temp_y
-                set_pixel_abs zp.snake.body_stack.temp_x, zp.snake.body_stack.temp_y, zp.snake.body_color
+            ldy zp.snake.body_stack.size
             sty zp.snake.body_stack.read_head
-            cpy #0
-        bne loop_body_draw
-        end_body_draw:
+            cpy# 0
+            beq end_body_draw
+            loop_body_draw:
+                ldy zp.snake.body_stack.read_head
+                dey
+                    lda (zp.snake.body_stack.ptr),y
+                    sta zp.snake.body_stack.temp_x
+                dey
+                    lda (zp.snake.body_stack.ptr),y
+                    sta zp.snake.body_stack.temp_y
+                    set_pixel_abs zp.snake.body_stack.temp_x, zp.snake.body_stack.temp_y, zp.snake.body_color
+                sty zp.snake.body_stack.read_head
+                cpy #0
+            bne loop_body_draw
+            end_body_draw:
+        // Draw Head
+            set_pixel_abs zp.snake.head.x, zp.snake.head.y, zp.snake.color
         rts
     }
     //-------------------------------------------------------------------------
