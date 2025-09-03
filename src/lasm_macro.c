@@ -78,7 +78,7 @@ uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 				hh_darray_pop(tokens, i, 0); // Consume '('
 				inside_macro_args++;
 			}else if (inside_macro_args > 0){
-				printf("token: %s\n", token->text);
+				// printf("token: %s\n", token->text);
 				hh_darray_append(&macro->args, token);
 				hh_darray_pop(tokens, i, 0); // Consume argument name
 				if(token->id == COMMA){
@@ -154,36 +154,50 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 			if(macro){
 				// Apply macro
 				printf("Applying macro '%s'\n", macro->name.text);
+				hh_darray_t arguments; hh_darray_init(&arguments, sizeof(hh_darray_t));
 				hh_darray_pop(tokens, i, 0); // Consume macro name
-				if(hh_darray_get_item_fill(&macro->args) > 0){
-					if(token->id != RBRAC_O){
-						print_error_loc(token);
-						printf("Macro '%s' requires arguments\n", macro->name.text);
-						return ERR;
-					}
+				if(token->id == RBRAC_O){
 					hh_darray_pop(tokens, i, 0); // Consume '('
-					// store arguments as macros
-					for(size_t j = 0; j < hh_darray_get_item_fill(&macro->args); j++){
-						hh_darray_append(macros, 0);
-						macro_t* new_macro = hh_darray_get_end_reference(macros);
-						hh_darray_init(&new_macro->tokens, sizeof(token_t));
-						hh_darray_get(&macro->args, j, &new_macro->name);
-						size_t ip = 0;
-						size_t brace_level = 1;
-						while(1){
-							token_t* arg_token = hh_darray_get_reference(tokens, i + ip);
-							printf("arg_token: %s for %s\n", arg_token->text, new_macro->name.text);
-							hh_darray_pop(tokens, i + ip, 0); // Consume all until ')' or ','
-							if(arg_token->id == RBRAC_C) brace_level--;
-							if(arg_token->id == RBRAC_O) brace_level++;
-							if(brace_level == 0 || arg_token->id == COMMA){
-								break;
-							}
-							hh_darray_append(&new_macro->tokens, token);
-							ip++;
+					int32_t bracket_count = 1;
+					while(bracket_count > 0){
+						hh_darray_append(&arguments, 0);
+						hh_darray_t* arg_tokens = hh_darray_get_end_reference(&arguments);
+						hh_darray_init(arg_tokens, sizeof(token_t));
+						while(token->id != COMMA && bracket_count > 0){
+							hh_darray_append(arg_tokens, token);
+							hh_darray_pop(tokens, i, 0);
+							if(token->id == RBRAC_C) bracket_count--;
+							if(token->id == RBRAC_O) bracket_count++;
+						}
+						if(token->id == COMMA){
+							hh_darray_pop(tokens, i, 0); // Consume ','
 						}
 					}
+					hh_darray_pop(tokens, i, 0); // Consume ')'
 				}
+				// print arguments tokens
+				size_t arg_j = 0;
+				for(size_t j = 0; j < hh_darray_get_item_fill(&macro->tokens); j++){
+					token_t* macro_token = hh_darray_get_reference(&macro->tokens, j);
+					size_t index = lasm_get_argument_index(macro, macro_token);
+					if(index != SIZE_MAX){
+						if(index >= hh_darray_get_item_fill(&arguments)){
+							print_error_loc(macro_token);
+							printf("Macro '%s' argument %d not provided\n", macro->name.text, (int)index);
+							hh_darray_deinit(&arguments);
+							return ERR;
+						}
+						hh_darray_t* arg_tokens = hh_darray_get_reference(&arguments, index);
+						for(size_t k = 0; k < hh_darray_get_item_fill(arg_tokens); k++){
+							token_t* arg_token = hh_darray_get_reference(arg_tokens, k);
+							hh_darray_push(tokens, i+j+arg_j+k, arg_token);
+						}
+						arg_j += hh_darray_get_item_fill(arg_tokens) - 1;
+					}else{
+						hh_darray_push(tokens, i+j+arg_j, macro_token);
+					}
+				}
+				hh_darray_deinit(&arguments);
 			}
 		}
 	}
@@ -201,7 +215,16 @@ macro_t* lasm_find_and_get_macro(token_t *token, hh_darray_t *macros){
 	}
 	return NULL;
 }
-
+//-----------------------------------------------------------------------------
+size_t lasm_get_argument_index(macro_t *macro, token_t *token){
+	for(size_t i = 0; i < hh_darray_get_item_fill(&macro->args); i++){
+		token_t *arg = hh_darray_get_reference(&macro->args, i);
+		if(arg->id == token->id && strcmp(arg->text, token->text) == 0){
+			return i;
+		}
+	}
+	return SIZE_MAX;
+}
 //-----------------------------------------------------------------------------
 uint8_t lasm_clear_multi_newlines(hh_darray_t *tokens){
 	// Clean up unnecessary newlines

@@ -38,15 +38,15 @@ start[0x8000]:  // declare bracnh label and set assembler counter
 // Macro usage
 {
 again:
-inc_one(zp.a)
-inc_one(2)     // zp.b
+inc_one(zp.a-3+3)
+inc_one(2*3)     // zp.b
 beq again     // Relative jump
 }
 // Curley brackets creates a scope limited for macros
 // Outer macroes can be accessed inside but reverse can't happen
 {  
-	print_str(hi, 2)
-	print_val start // prints value of 123
+	print_str(hi, 2*(3-2))
+	print_val(start) // prints value of 123
 	jump(out)
 	hi: "hi"
 	start: 123

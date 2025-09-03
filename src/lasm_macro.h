@@ -23,6 +23,7 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros);
 uint8_t lasm_clear_multi_newlines(hh_darray_t *tokens);
 uint8_t lasm_newline_after_branches(hh_darray_t *tokens);
 macro_t* lasm_find_and_get_macro(token_t *token, hh_darray_t *macros);
+size_t lasm_get_argument_index(macro_t *macro, token_t *token);
 void print_macros(hh_darray_t *macros);
 
 #endif
