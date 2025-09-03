@@ -227,6 +227,7 @@ void print_tokens_as_code(hh_darray_t* tokens){
 		else if(token.id == STRING_DB) printf("\"%s\"", token.text);
 		else if(token.id == STRING_SG) printf("'%s'", token.text);
 		else if(token.id == VECTOR) printf("[%s]", token.text);
+		else if(token.id == MACRO_ARG) printf("<%s>", token.text);
 		else printf("%s ", token.text);
 	}		
 }

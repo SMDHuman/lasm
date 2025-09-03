@@ -58,14 +58,17 @@ int main(int argc, char *argv[]){
   // Find and apply includes
   printf("Finding and applying includes...\n");
   if(lasm_find_apply_includes(&tokens, &include_paths) == ERR) return ERR;
-  hh_darray_t macros; hh_darray_init(&macros, sizeof(hh_darray_t));
+  hh_darray_t macros; hh_darray_init(&macros, sizeof(macro_t));
   printf("Extracting macros...\n");
   if(lasm_extract_macros(&tokens, &macros) == ERR) return ERR;
+  //print_macros(&macros);
   // Apply macros main tokens
+  printf("Applying macros...\n");
   if(lasm_apply_macros(&tokens, &macros) == ERR) return ERR;
   if(lasm_newline_after_branches(&tokens) == ERR) return ERR;
   if(lasm_clear_multi_newlines(&tokens) == ERR) return ERR;
-  //print_tokens_as_code(&tokens);
+  print_tokens_as_code(&tokens);
+  return 0;
   //====================================
   char* cpu = hh_argparse_get_op_short_or_long(parser, 'm', "machine");
   if(cpu){
