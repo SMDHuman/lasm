@@ -67,8 +67,7 @@ int main(int argc, char *argv[]){
   if(lasm_apply_macros(&tokens, &macros) == ERR) return ERR;
   if(lasm_newline_after_branches(&tokens) == ERR) return ERR;
   if(lasm_clear_multi_newlines(&tokens) == ERR) return ERR;
-  print_tokens_as_code(&tokens);
-  return 0;
+  // print_tokens_as_code(&tokens);
   //====================================
   char* cpu = hh_argparse_get_op_short_or_long(parser, 'm', "machine");
   if(cpu){
@@ -104,12 +103,7 @@ int main(int argc, char *argv[]){
   // fclose(json);
   //====================================
   // Free each macro in the macros array
-  for(size_t i = 0; i < hh_darray_get_item_fill(&macros); i++) {
-    hh_darray_t macro;
-    hh_darray_get(&macros, i, &macro);
-    hh_darray_deinit(&macro);
-    // Free the allocated macro_tokens if any
-  }
+  // TODO:
   hh_darray_deinit(&macros);
   // Free path strings before deinit
   for(size_t i = 0; i < hh_darray_get_item_fill(&include_paths); i++) {

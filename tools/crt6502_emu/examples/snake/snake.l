@@ -40,13 +40,13 @@ main_setup:{
     // Module Setup
         UTIL_SETUP
     // Initial values
-        SET_MEM_IMM     zp.snake.color              , (0 & 0x7) << 5 | (7 & 0x7) << 2 | (0 & 0x3)
-        SET_MEM_IMM     zp.snake.body_color         , (0 & 0x7) << 5 | (3 & 0x7) << 2 | (0 & 0x3)
-        SET_MEM_IMM     zp.food.color               , (7 & 0x7) << 5 | (0 & 0x7) << 2 | (0 & 0x3)
-        SET_MEM_IMM     zp.snake.head.dir_x         , 1
-        SET_MEM_IMM     zp.snake.body_stack.cap     , 128
-        SET_MEM_IMM     zp.snake.body_stack.ptr     , SNAKE_BODY[0]
-        SET_MEM_IMM     zp.snake.body_stack.ptr+1   , SNAKE_BODY[1]
+        SET_MEM_IMM     (zp.snake.color              , RGB332(0, 7, 0))
+        SET_MEM_IMM     (zp.snake.body_color         , RGB332(0, 3, 0))
+        SET_MEM_IMM     (zp.food.color               , RGB332(6, 0, 0))
+        SET_MEM_IMM     (zp.snake.head.dir_x         , 1)
+        SET_MEM_IMM     (zp.snake.body_stack.cap     , 128)
+        SET_MEM_IMM     (zp.snake.body_stack.ptr     , SNAKE_BODY[0])
+        SET_MEM_IMM     (zp.snake.body_stack.ptr+1   , SNAKE_BODY[1])
     // food
         jsr subs.erase_food
         jsr subs.pick_food_place
@@ -66,7 +66,7 @@ main_loop:{
         jsr subs.draw_snake
         jsr subs.draw_food
     //Wait
-        wait_set_cycle 0xffff
+        wait_set_cycle (0xffff)
         jsr subs.wait
         jsr subs.wait
         jsr subs.wait
@@ -87,7 +87,7 @@ main_loop:{
 subs[0xA000::0xB000]{
     UTIL_IMPLEMENTATION
     //-------------------------------------------------------------------------
-    <wait_set_cycle <val>;lda# <val> & 0xff;sta subs.wait.cycle;lda# <val> >> 8;sta subs.wait.cycle + 1;>
+    <wait_set_cycle (<val>);lda# <val> & 0xff;sta subs.wait.cycle;lda# <val> >> 8;sta subs.wait.cycle + 1;>
     wait{cycle: 0.(2)}
     wait:{
         ldx wait.cycle
@@ -134,13 +134,13 @@ subs[0xA000::0xB000]{
                 dey
                     lda (zp.snake.body_stack.ptr),y
                     sta zp.snake.body_stack.temp_y
-                    set_pixel_abs zp.snake.body_stack.temp_x, zp.snake.body_stack.temp_y, zp.snake.body_color
+                    set_pixel_abs (zp.snake.body_stack.temp_x, zp.snake.body_stack.temp_y, zp.snake.body_color)
                 sty zp.snake.body_stack.read_head
                 cpy #0
             bne loop_body_draw
             end_body_draw:
         // Draw Head
-            set_pixel_abs zp.snake.head.x, zp.snake.head.y, zp.snake.color
+            set_pixel_abs (zp.snake.head.x, zp.snake.head.y, zp.snake.color)
         rts
     }
     //-------------------------------------------------------------------------
@@ -286,7 +286,7 @@ subs[0xA000::0xB000]{
     //-------------------------------------------------------------------------
     erase_snake:{
         // Erase Head
-        set_pixel_abs zp.snake.head.x, zp.snake.head.y, zp.zero
+        set_pixel_abs (zp.snake.head.x, zp.snake.head.y, zp.zero)
         // Erase last body part
         {
             lda zp.snake.body_stack.size
@@ -299,7 +299,7 @@ subs[0xA000::0xB000]{
             dey
                 lda (zp.snake.body_stack.ptr),y
                 sta zp.snake.body_stack.temp_y
-            set_pixel_abs zp.snake.body_stack.temp_x, zp.snake.body_stack.temp_y, zp.zero
+            set_pixel_abs (zp.snake.body_stack.temp_x, zp.snake.body_stack.temp_y, zp.zero)
             break:
         }
     rts
@@ -330,12 +330,12 @@ subs[0xA000::0xB000]{
     }
     //-------------------------------------------------------------------------
     draw_food:{
-        set_pixel_abs zp.food.x, zp.food.y, zp.food.color
+        set_pixel_abs (zp.food.x, zp.food.y, zp.food.color)
         rts
     }
     //-------------------------------------------------------------------------
     erase_food:{
-        set_pixel_abs zp.food.x, zp.food.y, zp.zero
+        set_pixel_abs (zp.food.x, zp.food.y, zp.zero)
         rts
     }
     //-------------------------------------------------------------------------

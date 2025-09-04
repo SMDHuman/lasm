@@ -18,9 +18,9 @@ DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]:
 >
 <UTIL_SETUP
 {
-    SET_MEM_IMM zp.r_seed, 1
-    SET_MEM_IMM RESOLUTION, WIDTH
-    SET_MEM_IMM RESOLUTION+1, HEIGHT
+    SET_MEM_IMM (zp.r_seed, 1)
+    SET_MEM_IMM (RESOLUTION, WIDTH)
+    SET_MEM_IMM (RESOLUTION+1, HEIGHT)
 }
 >
 <UTIL_IMPLEMENTATION
@@ -67,7 +67,7 @@ DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]:
     rts
   }
 >
-<set_pixel_imm <x> <y> <color>
+<set_pixel_imm (<x>, <y>, <color>)
   lda# <x>
   sta subs.calculate_pixel_address.x
   lda# <y>
@@ -77,7 +77,7 @@ DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]:
   ldx# 0
   sta (zp.pixel_address,x)
 >
-<set_pixel_abs <x> <y> <color>
+<set_pixel_abs (<x>, <y>, <color>)
   lda <x>
   sta subs.calculate_pixel_address.x
   lda <y>
@@ -87,9 +87,9 @@ DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]:
   ldx# 0
   sta (zp.pixel_address,x)
 >
-<SET_MEM_IMM <addrs> <val>
-  lda#<val>;sta <addrs>
+<SET_MEM_IMM (<addrs>, <val>)
+  lda# <val>
+  sta <addrs>
 >
-<RGB332 <r> <g> <b>
-  (<r> & 0x7) << 5 | (<g> & 0x7) << 2 | (<b> & 0x3)
+<RGB332 (<r>, <g>, <b>) (<r> & 0x7) << 5 | (<g> & 0x7) << 2 | (<b> & 0x3)
 >

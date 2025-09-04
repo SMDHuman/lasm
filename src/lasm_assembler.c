@@ -39,6 +39,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   token_t *token = hh_darray_get_reference(tokens, 0);
   while(hh_darray_get_fill(tokens) > 0){
     //====================================
+    // printf("token: %s\n", token->text);
     // Handle word token
     if(token->id == WORD){
       // 'word...{'

@@ -40,7 +40,7 @@ uninstall:
 	rm -f ~/.local/bin/lasm
 
 # Examples
-examples: example_basics example_expressions example_namespaces example_fibonacci example_6502_addressing
+examples: example_basic_syntax example_expressions example_namespaces example_fibonacci example_6502_addressing
 
 example_%: $(BUILD_DIR)/lasm examples/%.l
 	./$(BUILD_DIR)/lasm examples/$*.l -m 6502 -o $(BUILD_DIR)/$*.out

@@ -25,7 +25,7 @@ zp.c
 "Hello"+3
 zp.stack.end
 LABEL 
-macro_with_args 123+2, 412
+macro_with_args (123+2, 412)
 }
 
 global_out:
@@ -35,7 +35,7 @@ global_out:
 0x21 - 3 + 2
 >
 
-<macro_with_args <arg1> <arg2>
+<macro_with_args (<arg1>, <arg2>)
 <arg1>
 <arg2>
 <arg1>

@@ -16,8 +16,7 @@ zp {
 
 asd
 
-<asd dsa>
-<dsa 123>
+<asd 123>
 
 0xffff
 
@@ -67,6 +66,7 @@ reset_vectors[0xfffa]:
 	sta <x>
 >
 <jump(<there>)
+	c:
 	lda #<there>[0] // project first byte of the value
 	sta c
 	lda# <there>[1] // '#' is a seperate token, the type of cpu may change the use of those characters  
@@ -97,4 +97,4 @@ reset_vectors[0xfffa]:
 // If 'ax' is used as a macro label, insert the code to current position
  <?ax
 	lda #ax
- >
+ >;

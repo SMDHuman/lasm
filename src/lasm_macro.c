@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 #include "lasm_macro.h"
 
-static const char TAG[] = "MCRO";
+static const char TAG[] = "[MCRO]";
 
 //-----------------------------------------------------------------------------
 uint8_t lasm_find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths){
@@ -68,24 +68,30 @@ uint8_t lasm_find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths
 uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 	int8_t inside_macro = 0;
 	int8_t inside_macro_args = 0;
+	int8_t args_parsed = 0;
 	macro_t* macro;
 	token_t* token;
 	for(uint32_t i = 0; i < hh_darray_get_item_fill(tokens); i++){
 		token = hh_darray_get_reference(tokens, i);
 		//...
 		if(inside_macro > 0){
-			if(token->id == RBRAC_O && hh_darray_get_item_fill(&macro->tokens) == 0){
+			if(token->id == RBRAC_O && hh_darray_get_item_fill(&macro->tokens) == 0 && !args_parsed){
 				hh_darray_pop(tokens, i, 0); // Consume '('
+				// printf("Parsing macro arguments for '%s'\n", macro->name.text);
 				inside_macro_args++;
 			}else if (inside_macro_args > 0){
-				// printf("token: %s\n", token->text);
+				// printf("arg_token: %s\n", token->text);
 				hh_darray_append(&macro->args, token);
 				hh_darray_pop(tokens, i, 0); // Consume argument name
 				if(token->id == COMMA){
 					hh_darray_pop(tokens, i, 0); // Consume ','
+				}else if (token->id == RBRAC_O){
+					hh_darray_pop(tokens, i, 0); // Consume '('
+					inside_macro_args++;
 				}else if(token->id == RBRAC_C){
 					hh_darray_pop(tokens, i, 0); // Consume ')'
 					inside_macro_args--;
+					args_parsed = 1;
 				}else{
 					printf(TAG);
 					print_error_loc(token);
@@ -133,6 +139,7 @@ uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 				hh_darray_pop(tokens, i--, 0); // Consume name
 				hh_darray_init(&macro->tokens, sizeof(token_t));
 				hh_darray_init(&macro->args, sizeof(token_t));
+				args_parsed = 0;
 				inside_macro++;
 			}
 		}
@@ -151,9 +158,10 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 		token_t* token = hh_darray_get_reference(tokens, i);
 		if(token->id == WORD){
 			macro_t* macro = lasm_find_and_get_macro(token, macros);
+			token_t org_token = *token;
 			if(macro){
 				// Apply macro
-				printf("Applying macro '%s'\n", macro->name.text);
+				// printf("Applying macro '%s'\n", macro->name.text);
 				hh_darray_t arguments; hh_darray_init(&arguments, sizeof(hh_darray_t));
 				hh_darray_pop(tokens, i, 0); // Consume macro name
 				if(token->id == RBRAC_O){
@@ -163,11 +171,19 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 						hh_darray_append(&arguments, 0);
 						hh_darray_t* arg_tokens = hh_darray_get_end_reference(&arguments);
 						hh_darray_init(arg_tokens, sizeof(token_t));
-						while(token->id != COMMA && bracket_count > 0){
-							hh_darray_append(arg_tokens, token);
-							hh_darray_pop(tokens, i, 0);
+						while(token->id != COMMA || bracket_count > 1){
 							if(token->id == RBRAC_C) bracket_count--;
 							if(token->id == RBRAC_O) bracket_count++;
+							if(bracket_count == 0) break;
+							if(hh_darray_get_item_fill(tokens) == 0){
+								printf(TAG);
+								print_error_loc(&org_token);
+								printf("There is no matching ')' for macro argument\n");
+								hh_darray_deinit(&arguments);
+								return ERR;
+							}
+							hh_darray_append(arg_tokens, token);
+							hh_darray_pop(tokens, i, 0); // Consume token
 						}
 						if(token->id == COMMA){
 							hh_darray_pop(tokens, i, 0); // Consume ','
@@ -175,6 +191,7 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 					}
 					hh_darray_pop(tokens, i, 0); // Consume ')'
 				}
+				//print_tokens_as_code(tokens);
 				// print arguments tokens
 				size_t arg_j = 0;
 				for(size_t j = 0; j < hh_darray_get_item_fill(&macro->tokens); j++){
@@ -182,14 +199,16 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 					size_t index = lasm_get_argument_index(macro, macro_token);
 					if(index != SIZE_MAX){
 						if(index >= hh_darray_get_item_fill(&arguments)){
-							print_error_loc(macro_token);
+							print_error_loc(token);
 							printf("Macro '%s' argument %d not provided\n", macro->name.text, (int)index);
 							hh_darray_deinit(&arguments);
 							return ERR;
 						}
 						hh_darray_t* arg_tokens = hh_darray_get_reference(&arguments, index);
+						// printf("	Inserting %d tokens for argument '%s'\n", (int)hh_darray_get_item_fill(arg_tokens), macro_token->text);
 						for(size_t k = 0; k < hh_darray_get_item_fill(arg_tokens); k++){
 							token_t* arg_token = hh_darray_get_reference(arg_tokens, k);
+							// printf("	  Arg token: %s\n", arg_token->text);
 							hh_darray_push(tokens, i+j+arg_j+k, arg_token);
 						}
 						arg_j += hh_darray_get_item_fill(arg_tokens) - 1;
