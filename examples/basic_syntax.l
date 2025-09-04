@@ -27,6 +27,10 @@ stack{
 
 start[0x8000]:  // declare bracnh label and set assembler counter
 
+bcc reach_test
+0.123
+reach_test:
+
 <"hello_world.l"> // insert other file's content here
 
 // Values

@@ -5,7 +5,7 @@
 // functions return 255 on failure
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 02.09.2025
+// Last Update	: 04.09.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_BIGINT_H
 #define HH_BIGINT_H
@@ -67,6 +67,7 @@ uint8_t hh_bigint_set_uint32(hh_bigint_t *bigint, const uint32_t value);
 uint8_t hh_bigint_set_uint16(hh_bigint_t *bigint, const uint16_t value);
 uint8_t hh_bigint_set_buffer(hh_bigint_t *bigint, const void *data, const size_t size);
 uint64_t hh_bigint_get_uint64(const hh_bigint_t *bigint);
+int64_t hh_bigint_get_int64(const hh_bigint_t *bigint);
 uint8_t hh_bigint_set_at(hh_bigint_t *bigint, const uint8_t value, const size_t index);
 uint8_t hh_bigint_get_at(const hh_bigint_t *bigint, const size_t index);
 uint8_t hh_bigint_print(const hh_bigint_t *bigint);
@@ -122,7 +123,11 @@ uint8_t hh_bigint_deinit(hh_bigint_t *bigint){
 //-----------------------------------------------------------------------------
 uint8_t hh_bigint_resize(hh_bigint_t *bigint, const size_t new_capacity){
     if(new_capacity != bigint->size){
-        bigint->data = realloc(bigint->data, new_capacity);
+        uint8_t *new_data = malloc(new_capacity);
+        if(new_data == NULL) return ERR;
+        memcpy(new_data, bigint->data, (new_capacity < bigint->size ? new_capacity : bigint->size));
+        free(bigint->data);
+        bigint->data = new_data;
         if(new_capacity > bigint->size){
             memset(&bigint->data[bigint->size], 0, new_capacity - bigint->size);
         }
@@ -193,6 +198,16 @@ uint64_t hh_bigint_get_uint64(const hh_bigint_t *bigint){
     for(size_t i = 0; i < 8; i++){
         value |= ((uint64_t)hh_bigint_get_at(bigint, i) << (i * 8));
     }
+    return value;
+}
+//-----------------------------------------------------------------------------
+int64_t hh_bigint_get_int64(const hh_bigint_t *bigint){
+    if(bigint == NULL) return 0;
+    int64_t value = 0;
+    for(size_t i = 0; i < 8; i++){
+        value |= ((int64_t)hh_bigint_get_at(bigint, i) << (i * 8));
+    }
+    if(bigint->sign) value = -value;
     return value;
 }
 //-----------------------------------------------------------------------------

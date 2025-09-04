@@ -179,7 +179,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
     // Handle '}' token
     else if(token->id == CBRAC_C){
       // Backwards patches
-      lasm_eval_and_backward_patch_expression(1);
+      if(lasm_eval_and_backward_patch_expression(1) == ERR) return ERR;
       //...
       namespace_t* upper_ns = (namespace_t *)lasm_assembler.current_namespace->parent;
       if(!lasm_assembler.current_namespace->constant){
@@ -249,7 +249,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   }
   // =====================
   // Backwards patches
-  lasm_eval_and_backward_patch_expression(0);
+  if(lasm_eval_and_backward_patch_expression(0) == ERR) return ERR;
   //...
   if(lasm_assembler.last_address_setter.id == WORD){
     printf(TAG);
@@ -282,6 +282,25 @@ uint8_t lasm_eval_and_backward_patch_expression(uint8_t enable_skip){
     }
     if(patch->is_relative){
       hh_bigint_subtract_int64(&value, patch->offset + patch->size);
+      hh_bigint_normalize(&value);
+      // check if relative value fits in size. if not, give error
+      if(value.size > patch->size){
+        printf(TAG);
+        print_error_loc(&patch->root->token);
+        printf("Relative value size %zu bytes doesn't fit in allocated size %u bytes\n", value.size, patch->size);
+        return ERR;
+      }
+      // check if relative value fits in signed range. if not, give error
+      if(patch->size < 8){ // 1,2,4 bytes
+        int64_t signed_limit = (1LL << (patch->size * 8 - 1)) - 1;
+        int64_t signed_value = hh_bigint_get_int64(&value);
+        if(signed_value < -signed_limit - 1 || signed_value > signed_limit){
+          printf(TAG);
+          print_error_loc(&patch->root->token);
+          printf("Relative value %lld doesn't fit in signed range of %u bytes\n", signed_value, patch->size);
+          return ERR;
+        }
+      }
     }
     size_t current_offset = ftell(lasm_assembler.output_file);
     fseek(lasm_assembler.output_file, patch->offset, SEEK_SET);
@@ -319,11 +338,28 @@ uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result,
   }else{
     parser_expression_deinit(&expression);
   }
-  if(max_size > 0 && result->size > max_size){
+  if(max_size > 0 && result->size > max_size && !is_relative){
     hh_bigint_resize(result, max_size);
   }
-  if(is_relative){
+  if(is_relative && res != 2){
     hh_bigint_subtract_int64(result, result->size + lasm_get_file_cursor());
+    hh_bigint_normalize(result);
+    // check if relative value fits in size. if not, give error
+    if(result->size > max_size && max_size > 0){
+      printf(TAG);
+      printf(" Relative value size %zu bytes doesn't fit in allocated size %u bytes\n", result->size, max_size);
+      return ERR;
+    }
+    // check if relative value fits in signed range. if not, give error
+    if(max_size < 8){ // 1,2,4 bytes
+      int64_t signed_limit = (1LL << (max_size * 8 - 1)) - 1;
+      int64_t signed_value = hh_bigint_get_int64(result);
+      if(signed_value < -signed_limit - 1 || signed_value > signed_limit){
+        printf(TAG);
+        printf(" Relative value %lld doesn't fit in signed range of %u bytes\n", signed_value, max_size);
+        return ERR;
+      }
+    }
   }
   return 0;
 }
