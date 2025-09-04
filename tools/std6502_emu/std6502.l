@@ -1,7 +1,7 @@
 <emu_call_func 0x1100>
 <emu_return_address 0x1101>
 
-<emu_return <exit_code>
+<emu_return (<exit_code>)
   pha
   {
     lda# 6
@@ -12,7 +12,7 @@
   }
   pla
 >
-<emu_puts <str_pointer>
+<emu_puts (<str_pointer>)
   pha
   {
     lda# 4
@@ -23,9 +23,9 @@
   }
   pla
 >
-<emu_puts_imm <str>
+<emu_puts_imm (<str>)
   {
-    emu_puts imm_str
+    emu_puts (imm_str)
     jmp next
     imm_str: <str>;
     next:
@@ -42,7 +42,7 @@
   }
   pla
 >
-<emu_putchar <char>
+<emu_putchar (<char>)
   pha
   {
     lda# 3

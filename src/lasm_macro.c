@@ -156,9 +156,9 @@ uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 	for(uint32_t i = 0; i < hh_darray_get_item_fill(tokens); i++){
 		token_t* token = hh_darray_get_reference(tokens, i);
+		token_t org_token; hh_darray_get(tokens, i, &org_token);
 		if(token->id == WORD){
 			macro_t* macro = lasm_find_and_get_macro(token, macros);
-			token_t org_token = *token;
 			if(macro){
 				// Apply macro
 				// printf("Applying macro '%s'\n", macro->name.text);
@@ -199,8 +199,9 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 					size_t index = lasm_get_argument_index(macro, macro_token);
 					if(index != SIZE_MAX){
 						if(index >= hh_darray_get_item_fill(&arguments)){
-							print_error_loc(token);
-							printf("Macro '%s' argument %d not provided\n", macro->name.text, (int)index);
+							printf(TAG);
+							print_error_loc(&org_token);
+							printf("Macro '%s' argument %d not provided\n", org_token.text, (int)index);
 							hh_darray_deinit(&arguments);
 							return ERR;
 						}

@@ -175,7 +175,6 @@ uint8_t lasm_6502_assemble(void){
     if(inst_addrs_mods[inst_id] & ADM_ACCUM) addr_mode = ADM_ACCUM;
   }
   // Indirect mode
-  // TODO: Do the indirect mode recognition better later. Please.
   else if(token->id == RBRAC_O){
     hh_darray_pop(lasm_assembler.tokens, 0, 0); // consume '('
     int32_t bracet_count = 1;
@@ -189,7 +188,7 @@ uint8_t lasm_6502_assemble(void){
     }
     check_token = hh_darray_get_reference(lasm_assembler.tokens, i);
     if(check_token->id == NEWLINE){
-      check_token = hh_darray_get_reference(lasm_assembler.tokens, i-3);
+      if(i > 3) check_token = hh_darray_get_reference(lasm_assembler.tokens, i-3);
       if(check_token->id == COMMA){
         check_token = hh_darray_get_reference(lasm_assembler.tokens, i-2);
         if(char_upper(check_token->text[0]) == 'X'){
@@ -205,7 +204,7 @@ uint8_t lasm_6502_assemble(void){
         }
       }else{ 
         addr_mode = ADM_IND;
-        hh_darray_pop(lasm_assembler.tokens, i, 0); // consume ')'
+        hh_darray_pop(lasm_assembler.tokens, i-1, 0); // consume ')'
       }
     }else if(check_token->id == COMMA){
       check_token = hh_darray_get_reference(lasm_assembler.tokens, i+1);
