@@ -332,9 +332,10 @@ uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result,
 // Search and log all reachable child labels and namespaces
 size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t *namespace){
   size_t i = start_from;
+  uint8_t first_in_line = 1;
   while(i < hh_darray_get_item_fill(tokens)){
     token_t* token = hh_darray_get_reference(tokens, i);
-    if(token->id == WORD){
+    if(token->id == WORD && first_in_line){
       // 'word...{'
       if(lasm_is_lineend_id(tokens, i, CBRAC_O)){
         namespace_t* find = lasm_find_namespace_reachable_namespace(namespace, token->text);
@@ -423,6 +424,8 @@ size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t 
     else{
       i++;
     }
+    if(token->id == NEWLINE) first_in_line = 1;
+    else if(first_in_line) first_in_line = 0;
   }
   return i;
 }
