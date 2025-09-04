@@ -91,5 +91,6 @@ DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]:
   lda# <val>
   sta <addrs>
 >
-<RGB332 (<r>, <g>, <b>) (<r> & 0x7) << 5 | (<g> & 0x7) << 2 | (<b> & 0x3)
+<RGB332 (<r>, <g>, <b>) 
+  (<r> & 0x7) << 5 | (<g> & 0x7) << 2 | (<b> & 0x3)
 >

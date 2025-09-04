@@ -103,10 +103,15 @@ uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 				hh_darray_pop(tokens, i, 0); // Consume '>'
 				if(lasm_extract_macros(&macro->tokens, macros) == ERR) return ERR;
 			}else{
+				args_parsed = 1; // no more args
 				if(token->id == MACRO_O) inside_macro++;
 				if(token->id == MACRO_C) inside_macro--;
-				hh_darray_append(&macro->tokens, token);
-				hh_darray_pop(tokens, i, 0);
+				if(hh_darray_get_item_fill(&macro->tokens) == 0 && token->id == NEWLINE){
+					hh_darray_pop(tokens, i, 0); // Consume newline after macro header
+				}else{
+					hh_darray_append(&macro->tokens, token);
+					hh_darray_pop(tokens, i, 0);
+				}
 			}
 			i--;
 		}
