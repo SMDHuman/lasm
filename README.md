@@ -49,10 +49,10 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
   
 * `DEFINE WITH ARGS` macro is identical to normal define macro, but there is some positional arguments that you can call like ```recall_name salam, sausage```
   ```
-  <recall_name <arg_name> <another_arg>
+  <recall_name (<arg_name>, <another_arg>)
     and other things <arg_name> with <another_arg>
   >
-  recall_name fizz, buzz 
+  recall_name (fizz, buzz)
   ```
   This code translates to
   ```
@@ -73,11 +73,11 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
   ```
   123; 0xfe; 0b01011
   3 + (2 - 3) * (0x12 << 2) / 3
-  "Hello Word Again"
+  "Hello World!"
   ```
   You can also manipulate the values with some special operations
   ```
-  "text of short"[2] // Isolates character 'x' by the index 
+  "text with words"[2] // Isolates character 'x' by the index 
   0xfff .[2] // this will ensure the value takes specifically 2 bytes of space
   ```
   LASM will allocate enough memory for each expression to fit its largest possible value
