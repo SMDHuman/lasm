@@ -11,7 +11,8 @@ BUILD_DIR := build
 OBJECTS := $(BUILD_DIR)/lasm_assembler.o \
 			 $(BUILD_DIR)/lasm_parser.o \
 			 $(BUILD_DIR)/lasm_macro.o \
-			 $(BUILD_DIR)/lasm_tokenizer.o
+			 $(BUILD_DIR)/lasm_tokenizer.o \
+			 $(BUILD_DIR)/lasm_machine.o
 
 # Main target
 $(BUILD_DIR)/lasm: $(BUILD_DIR) $(wildcard $(SRC_DIR)/*) $(wildcard $(CPU_DIR)/*) $(OBJECTS)

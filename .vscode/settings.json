@@ -13,6 +13,7 @@
     "stdlib.h": "c",
     "stdio.h": "c",
     "type_traits": "c",
-    "raylib.h": "c"
+    "raylib.h": "c",
+    "lasm_machine.h": "c"
   }
 }

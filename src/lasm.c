@@ -15,7 +15,7 @@
 #include "lasm_assembler.h"
 #include "lasm_parser.h"
 
-#include "cpu/6502.c"
+#include "cpu/6502.h"
 
 char* extract_folder_path(const char* path);
 
@@ -73,8 +73,10 @@ int main(int argc, char *argv[]){
   if(cpu){
     if(strcmp(cpu, "6502") == 0){
       printf("Assembling for 6502...\n");
-      lasm_6502_init();
-      lasm_assembler.machine_assemble = lasm_6502_assemble;
+      lasm_assembler.machine_recipes = lasm_6502_recipes;
+      lasm_assembler.machine_recipe_count = sizeof(lasm_6502_recipes) / sizeof(lasm_mcode_recipe_t);
+      lasm_assembler.addressing_size = 2;
+      strcat(lasm_assembler.machine_tag, "6502");
     }else{
       printf("[ERROR] Machine named '%s' not found\n", cpu);
       return ERR;
