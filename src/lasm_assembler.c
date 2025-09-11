@@ -1,10 +1,9 @@
 //-----------------------------------------------------------------------------
-// lasm_assembler.c 
+// lasm_assembler.c 14.08.2025
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
 #include "lasm_assembler.h"
 #include "lasm_tokenizer.h"
-#include "lasm_machine.h"
 #include "lasm_parser.h"
 
 //-----------------------------------------------------------------------------
@@ -158,7 +157,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
           hh_bigint_deinit(&value);
         }
         else{
-          if(lasm_machine_assemble_instruction(tokens, lasm_assembler.machine_recipes, lasm_assembler.machine_recipe_count, lasm_assembler.machine_tag) == ERR) return ERR;
+          if(lasm_assembler.machine_assemble() == ERR) return ERR;
         }
       }
     }

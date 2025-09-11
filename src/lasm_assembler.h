@@ -8,7 +8,6 @@
 #include "lasm_tokenizer.h"
 #include "lasm_parser.h"
 #include "hh_darray.h"
-#include "lasm_machine.h"
 #include "hh_bigint.h"
 
 #define DEFAULT_ADDRESSING_SIZE 2
@@ -41,9 +40,7 @@ typedef struct{
   namespace_t *current_namespace;
   hh_darray_t *tokens; // Currently processing tokens
   FILE* output_file; // Output file for assembled code
-  struct lasm_mcode_recipe_t* machine_recipes; // Machine code recipes
-  size_t machine_recipe_count; // Count of machine code recipes
-  char machine_tag[8]; // Tag of the machine
+  uint8_t (*machine_assemble)(void); // Function to assemble machine code
   namespace_t global_namespace; // Most upper namespace
 } assembler_t;
 
