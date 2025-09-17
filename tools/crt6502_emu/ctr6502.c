@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
     // Execute the next instruction
     if(cpu_running){
       step6502();
+      // printf("A: %d, X: %d, Y: %d, PC: %02X\n", a, x, y, pc);
       // print first 32 byte of memory
       // for(int i = 0; i < 18; i++) {
       //   printf("0x%02X, ", read6502(i));
@@ -123,5 +124,8 @@ uint8_t read6502(uint16_t address) {
   return memory[address];
 }
 void write6502(uint16_t address, uint8_t value) {
+  // if(CRT_BUFFER_ADDRESS < address && address < CRT_BUFFER_ADDRESS + CRT_WIDTH * CRT_HEIGHT){
+  //   printf("Writing to CRT buffer at address: 0x%04X, value: 0x%02X\n", address, value);
+  // }
   memory[address] = value;
 }

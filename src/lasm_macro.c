@@ -3,6 +3,8 @@
 // github.com/SMDHuman
 //-----------------------------------------------------------------------------
 #include "lasm_macro.h"
+#include "hh_bigint.h"
+#include "lasm_assembler.h"
 
 static const char TAG[] = "[MCRO]";
 
@@ -140,6 +142,15 @@ uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 			}else{
 				hh_darray_append(macros, 0);
 				macro = hh_darray_get_end_reference(macros);
+				if(token->id == NUMBER){
+					hh_bigint_t number; hh_bigint_init(&number, 0);
+					if(lasm_token_to_number(token, &number) == ERR) return ERR;
+					macro->max_use = hh_bigint_get_uint32(&number);
+					// printf("Macro max uses: %d\n", macro->max_use);
+					hh_darray_pop(tokens, i, 0); // Consume number
+				}else{
+					macro->max_use = -1;
+				}
 				macro->name = *token;
 				hh_darray_pop(tokens, i--, 0); // Consume name
 				hh_darray_init(&macro->tokens, sizeof(token_t));
@@ -198,28 +209,31 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 				}
 				//print_tokens_as_code(tokens);
 				// print arguments tokens
-				size_t arg_j = 0;
-				for(size_t j = 0; j < hh_darray_get_item_fill(&macro->tokens); j++){
-					token_t* macro_token = hh_darray_get_reference(&macro->tokens, j);
-					size_t index = lasm_get_argument_index(macro, macro_token);
-					if(index != SIZE_MAX){
-						if(index >= hh_darray_get_item_fill(&arguments)){
-							printf(TAG);
-							print_error_loc(&org_token);
-							printf("Macro '%s' argument %d not provided\n", org_token.text, (int)index);
-							hh_darray_deinit(&arguments);
-							return ERR;
+				if(macro->max_use != 0){
+					if(macro->max_use > 0) macro->max_use--;
+					size_t arg_j = 0;
+					for(size_t j = 0; j < hh_darray_get_item_fill(&macro->tokens); j++){
+						token_t* macro_token = hh_darray_get_reference(&macro->tokens, j);
+						size_t index = lasm_get_argument_index(macro, macro_token);
+						if(index != SIZE_MAX){
+							if(index >= hh_darray_get_item_fill(&arguments)){
+								printf(TAG);
+								print_error_loc(&org_token);
+								printf("Macro '%s' argument %d not provided\n", org_token.text, (int)index);
+								hh_darray_deinit(&arguments);
+								return ERR;
+							}
+							hh_darray_t* arg_tokens = hh_darray_get_reference(&arguments, index);
+							// printf("	Inserting %d tokens for argument '%s'\n", (int)hh_darray_get_item_fill(arg_tokens), macro_token->text);
+							for(size_t k = 0; k < hh_darray_get_item_fill(arg_tokens); k++){
+								token_t* arg_token = hh_darray_get_reference(arg_tokens, k);
+								// printf("	  Arg token: %s\n", arg_token->text);
+								hh_darray_push(tokens, i+j+arg_j+k, arg_token);
+							}
+							arg_j += hh_darray_get_item_fill(arg_tokens) - 1;
+						}else{
+							hh_darray_push(tokens, i+j+arg_j, macro_token);
 						}
-						hh_darray_t* arg_tokens = hh_darray_get_reference(&arguments, index);
-						// printf("	Inserting %d tokens for argument '%s'\n", (int)hh_darray_get_item_fill(arg_tokens), macro_token->text);
-						for(size_t k = 0; k < hh_darray_get_item_fill(arg_tokens); k++){
-							token_t* arg_token = hh_darray_get_reference(arg_tokens, k);
-							// printf("	  Arg token: %s\n", arg_token->text);
-							hh_darray_push(tokens, i+j+arg_j+k, arg_token);
-						}
-						arg_j += hh_darray_get_item_fill(arg_tokens) - 1;
-					}else{
-						hh_darray_push(tokens, i+j+arg_j, macro_token);
 					}
 				}
 				hh_darray_deinit(&arguments);

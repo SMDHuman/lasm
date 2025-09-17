@@ -338,11 +338,8 @@ uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result,
   }else{
     parser_expression_deinit(&expression);
   }
-  if(max_size > 0 && result->size > max_size && !is_relative){
-    hh_bigint_resize(result, max_size);
-  }
   if(is_relative && res != 2){
-    hh_bigint_subtract_int64(result, result->size + lasm_get_file_cursor());
+    hh_bigint_subtract_int64(result, max_size + lasm_get_file_cursor());
     hh_bigint_normalize(result);
     // check if relative value fits in size. if not, give error
     if(result->size > max_size && max_size > 0){
@@ -360,6 +357,9 @@ uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result,
         return ERR;
       }
     }
+  }
+  if(max_size > 0 && result->size > max_size){
+    hh_bigint_resize(result, max_size);
   }
   return 0;
 }

@@ -40,9 +40,21 @@ Macros are defined always inside ```< this >``` structure. There are 4 main type
   ```
   <recall_name and other things>
   recall_name; recall_name
+
+  // This code translates to
+
+  and other things
+  and other things
   ```
-  This code translates to
+  You can also define macros with set amount of use like
   ```
+  < 2 recall_name 
+    and other things
+  >
+  recall_name; recall_name; recall_name
+  
+  // This code translates to
+  
   and other things
   and other things
   ```

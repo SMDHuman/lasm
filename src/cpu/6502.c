@@ -235,8 +235,7 @@ uint8_t lasm_6502_assemble(void){
   hh_bigint_t value; hh_bigint_init(&value, 0);
   fseek(lasm_assembler.output_file, 1, SEEK_CUR); // Reserve space for addressings
   if(addr_mode & ADM_IMM){
-    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
-    hh_bigint_resize(&value, 1); 
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 1) == ERR) return ERR;
   }
   else if(addr_mode & (ADM_ZPG|ADM_ABS)){
     if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
@@ -277,17 +276,13 @@ uint8_t lasm_6502_assemble(void){
       return ERR;
     }
   }else if(addr_mode & ADM_IND){
-    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
-      hh_bigint_resize(&value, 2);
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 2) == ERR) return ERR;
   }else if(addr_mode & ADM_IND_Y){
-    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
-      hh_bigint_resize(&value, 1);
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 1) == ERR) return ERR;
   }else if(addr_mode & ADM_X_IND){
-    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
-      hh_bigint_resize(&value, 1);
+    if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 1) == ERR) return ERR;
   }else if(addr_mode & ADM_REL){
     if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 1, 1) == ERR) return ERR;
-    hh_bigint_resize(&value, 1);
     if(value.sign){
       value.data[0] = ~value.data[0]+1;
     }

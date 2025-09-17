@@ -1,3 +1,5 @@
+<"math.l">
+
 <!WIDTH
     <WIDTH 40>
 >
@@ -23,20 +25,20 @@ DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]:
     SET_MEM_IMM (RESOLUTION+1, HEIGHT)
 }
 >
-<UTIL_IMPLEMENTATION
+<1 UTIL_IMPLEMENTATION
   calculate_pixel_address{x:0;y:0}
   calculate_pixel_address:{
     lda calculate_pixel_address.y
-    sta subs.multiply.a
+    sta math.mult_u8.a
     lda# WIDTH
-    sta subs.multiply.b
+    sta math.mult_u8.b
     //...
-    jsr subs.multiply
+    jsr math.mult_u8
     //...
-    lda subs.multiply.out
+    lda math.mult_u8.out
     adc calculate_pixel_address.x
     sta zp.pixel_address
-    lda subs.multiply.out+1
+    lda math.mult_u8.out+1
     adc# 0
     sta zp.pixel_address+1
     // Add DISPLAY_BUF offset
@@ -49,23 +51,7 @@ DISPLAY_BUF [0x1000     :: DISPLAY_BUF + (WIDTH * HEIGHT)]:
     sta zp.pixel_address+1
     rts
   }
-  multiply{out: a: 0; b: 0}
-  multiply:{
-      LDA #0
-      LDX  #0x8
-      LSR  multiply.a
-    loop:
-      BCC  no_add
-      CLC
-      ADC  multiply.b
-    no_add:
-      ROR
-      ROR  multiply.a
-      DEX
-      BNE  loop
-      STA  multiply.b
-    rts
-  }
+  MATH_IMPLEMENTATIONS(MATH_MULTU8)
 >
 <set_pixel_imm (<x>, <y>, <color>)
   lda# <x>

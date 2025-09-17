@@ -12,6 +12,7 @@
 
 typedef struct{
   token_t name;
+  int32_t max_use; // -1 = unlimited
   hh_darray_t args; // sizeof(token_t)
   hh_darray_t tokens; // sizeof(token_t)
 }macro_t;

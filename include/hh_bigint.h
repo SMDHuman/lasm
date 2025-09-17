@@ -5,7 +5,7 @@
 // functions return 255 on failure
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 04.09.2025
+// Last Update	: 17.09.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_BIGINT_H
 #define HH_BIGINT_H
@@ -30,6 +30,10 @@
 #define hbi_set_uint32 hh_bigint_set_uint32
 #define hbi_set_uint16 hh_bigint_set_uint16
 #define hbi_set_buffer hh_bigint_set_buffer
+#define hbi_get_uint32 hh_bigint_get_uint32
+#define hbi_get_int32 hh_bigint_get_int32
+#define hbi_get_uint64 hh_bigint_get_uint64
+#define hbi_get_int64 hh_bigint_get_int64
 #define hbi_set_at hh_bigint_set_at
 #define hbi_get_at hh_bigint_get_at
 #define hbi_print hh_bigint_print
@@ -66,6 +70,8 @@ uint8_t hh_bigint_set_int32(hh_bigint_t *bigint, const int32_t value);
 uint8_t hh_bigint_set_uint32(hh_bigint_t *bigint, const uint32_t value);
 uint8_t hh_bigint_set_uint16(hh_bigint_t *bigint, const uint16_t value);
 uint8_t hh_bigint_set_buffer(hh_bigint_t *bigint, const void *data, const size_t size);
+uint32_t hh_bigint_get_uint32(const hh_bigint_t *bigint);
+int32_t hh_bigint_get_int32(const hh_bigint_t *bigint);
 uint64_t hh_bigint_get_uint64(const hh_bigint_t *bigint);
 int64_t hh_bigint_get_int64(const hh_bigint_t *bigint);
 uint8_t hh_bigint_set_at(hh_bigint_t *bigint, const uint8_t value, const size_t index);
@@ -190,6 +196,25 @@ uint8_t hh_bigint_set_buffer(hh_bigint_t *bigint, const void *data, const size_t
         memset(&bigint->data[size], 0, bigint->size - size);
     }
     return 0;
+}
+//-----------------------------------------------------------------------------
+uint32_t hh_bigint_get_uint32(const hh_bigint_t *bigint){
+    if(bigint == NULL) return 0;
+    uint32_t value = 0;
+    for(size_t i = 0; i < 4; i++){
+        value |= ((uint32_t)hh_bigint_get_at(bigint, i) << (i * 8));
+    }
+    return value;
+}
+//-----------------------------------------------------------------------------
+int32_t hh_bigint_get_int32(const hh_bigint_t *bigint){
+    if(bigint == NULL) return 0;
+    int32_t value = 0;
+    for(size_t i = 0; i < 4; i++){
+        value |= ((int32_t)hh_bigint_get_at(bigint, i) << (i * 8));
+    }
+    if(bigint->sign) value = -value;
+    return value;
 }
 //-----------------------------------------------------------------------------
 uint64_t hh_bigint_get_uint64(const hh_bigint_t *bigint){

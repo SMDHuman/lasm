@@ -13,7 +13,7 @@ DISPLAY_BUF[0x1000:: DISPLAY_BUF + (WIDTH * HEIGHT)]:
 main[0x8000::0x9000]:
   {loop_y: 
     {loop_x:
-      set_pixel_abs zp.x, zp.y, zp.color
+      set_pixel_abs(zp.x, zp.y, zp.color)
       {
         lda zp.color
         clc; adc# 15
@@ -80,7 +80,7 @@ subs[0xA000::0xB000]{
       CLC
       ADC  multiply.b
     no_add:
-      ROR a
+      ROR
       ROR  multiply.a
       DEX
       BNE  loop
@@ -89,7 +89,7 @@ subs[0xA000::0xB000]{
   }
 }
 
-<set_pixel_imm <x> <y> <color>
+<set_pixel_imm (<x>, <y>, <color>)
   ldx# <x>
   ldy# <y>
   jsr subs.calculate_pixel_address
@@ -97,7 +97,7 @@ subs[0xA000::0xB000]{
   ldx# 0
   sta (zp.pixel_address,x)
 >
-<set_pixel_abs <x> <y> <color>
+<set_pixel_abs (<x>, <y>, <color>)
   lda <x>
   sta subs.calculate_pixel_address.x
   lda <y>
