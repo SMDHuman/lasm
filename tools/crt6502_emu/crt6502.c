@@ -124,8 +124,9 @@ uint8_t read6502(uint16_t address) {
   return memory[address];
 }
 void write6502(uint16_t address, uint8_t value) {
-  // if(CRT_BUFFER_ADDRESS < address && address < CRT_BUFFER_ADDRESS + CRT_WIDTH * CRT_HEIGHT){
+  // if(address > CRT_BUFFER_ADDRESS + CRT_WIDTH * CRT_HEIGHT){
   //   printf("Writing to CRT buffer at address: 0x%04X, value: 0x%02X\n", address, value);
+  //   printf("PC: 0x%04X\n", pc);
   // }
   memory[address] = value;
 }

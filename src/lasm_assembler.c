@@ -583,11 +583,11 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
     } else if(node->token.id == ASTERISK) {
       hh_bigint_multiply(&left_number, &right_number, number);
     } else if(node->token.id == DOT){
-      size_t *size = (size_t*)right_number.data;
-      if(*size == 0){
+      uint32_t size = hh_bigint_get_uint32(&right_number);
+      if(size == 0){
         hh_bigint_set_zero(number);
       }else{
-        hh_bigint_resize(&left_number, *size);
+        hh_bigint_resize(&left_number, size);
         hh_bigint_copy(number, &left_number);
       }
     }else if(node->token.id == INDEX){

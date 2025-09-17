@@ -28,8 +28,10 @@ uint8_t lasm_find_apply_includes(hh_darray_t *tokens, hh_darray_t *include_paths
 						char *path; hh_darray_get(include_paths, i, &path);
 						size_t size = strlen(token.text) + strlen(path) + 2;
 						char *path_merge = malloc(size); memset(path_merge, 0, size);
-						strcat(path_merge, path);
-						strcat(path_merge, "/");
+						if(strlen(path) != 0){
+							strcat(path_merge, path);
+							strcat(path_merge, "/");
+						}
 						strcat(path_merge, token.text);	
 						file = fopen(path_merge, "r");
 						free(path_merge);

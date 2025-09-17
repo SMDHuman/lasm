@@ -33,6 +33,7 @@ int main(int argc, char *argv[]){
     printf("  -h, --help       Show this help message\n");
     printf("  -o, --output     Specify output file\n");
     printf("  -m, --machine    Specify target machine\n");
+    printf("  -i, --include     Specify include path\n");
     printf("Machines:\n");
     printf("  6502\n");
     hh_argparse_deinit(parser);
@@ -49,6 +50,11 @@ int main(int argc, char *argv[]){
   //..
   char *path = extract_folder_path(input_file_path);
   hh_darray_append(&include_paths, &path);
+  for(uint8_t i = 0; i < hh_argparse_check_op_short_or_long(parser, 'i', "include"); i++){
+    path = hh_argparse_get_nth_op_short_or_long(parser, 'i', "include", i);
+    hh_darray_append(&include_paths, &path);
+  }
+  //====================================
   // Tokenize input file
   hh_darray_t tokens; hh_darray_init(&tokens, sizeof(token_t));
   printf("Tokenizing %s\n", input_file_path);

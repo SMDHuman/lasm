@@ -2,7 +2,7 @@
 CC := cc
 CFLAGS := -ggdb -Wall -Wextra -I include -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
-build/ctr6502: ctr6502.c build
+build/crt6502: crt6502.c build
 	$(CC) -o $@ $< $(CFLAGS)
 
 build:
@@ -11,4 +11,4 @@ build:
 clean:
 	rm -f build/*
 
-all: clean build/ctr6502
+all: clean build/crt6502
