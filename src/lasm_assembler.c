@@ -297,7 +297,7 @@ uint8_t lasm_eval_and_backward_patch_expression(uint8_t enable_skip){
         if(signed_value < -signed_limit - 1 || signed_value > signed_limit){
           printf(TAG);
           print_error_loc(&patch->root->token);
-          printf("Relative value %lld doesn't fit in signed range of %u bytes\n", signed_value, patch->size);
+          printf("Relative value %ld doesn't fit in signed range of %u bytes\n", signed_value, patch->size);
           return ERR;
         }
       }
@@ -347,7 +347,7 @@ uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result,
     // check if relative value fits in size. if not, give error
     if(result->size > max_size && max_size > 0){
       printf(TAG);
-      printf(" Relative value size %zu bytes doesn't fit in allocated size %u bytes\n", result->size, max_size);
+      printf(" Relative value size %zu bytes doesn't fit in allocated size %lu bytes\n", result->size, max_size);
       return ERR;
     }
     // check if relative value fits in signed range. if not, give error
@@ -356,7 +356,7 @@ uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result,
       int64_t signed_value = hh_bigint_get_int64(result);
       if(signed_value < -signed_limit - 1 || signed_value > signed_limit){
         printf(TAG);
-        printf(" Relative value %lld doesn't fit in signed range of %u bytes\n", signed_value, max_size);
+        printf(" Relative value %ld doesn't fit in signed range of %lu bytes\n", signed_value, max_size);
         return ERR;
       }
     }
