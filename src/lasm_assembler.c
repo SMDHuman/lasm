@@ -157,7 +157,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
           hh_bigint_deinit(&value);
         }
         else{
-          if(lasm_assembler.machine_assemble() == ERR) return ERR;
+          if(lasm_assembler.machine_assemble((struct assembler_t*)&lasm_assembler) == ERR) return ERR;
         }
       }
     }

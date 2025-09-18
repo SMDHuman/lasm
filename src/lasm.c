@@ -79,8 +79,8 @@ int main(int argc, char *argv[]){
   if(cpu){
     if(strcmp(cpu, "6502") == 0){
       printf("Assembling for 6502...\n");
-      lasm_6502_init();
-      lasm_assembler.machine_assemble = lasm_6502_assemble;
+      lasm_6502_init(&lasm_assembler);
+      lasm_assembler.machine_assemble = (uint8_t (*)(void*))lasm_6502_assemble;
     }else{
       printf("[ERROR] Machine named '%s' not found\n", cpu);
       return ERR;

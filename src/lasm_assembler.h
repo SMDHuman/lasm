@@ -40,7 +40,7 @@ typedef struct{
   namespace_t *current_namespace;
   hh_darray_t *tokens; // Currently processing tokens
   FILE* output_file; // Output file for assembled code
-  uint8_t (*machine_assemble)(void); // Function to assemble machine code
+  uint8_t (*machine_assemble)(void *assembler); // Function to assemble machine code
   namespace_t global_namespace; // Most upper namespace
 } assembler_t;
 
