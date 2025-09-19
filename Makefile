@@ -1,11 +1,11 @@
-# Compiler and flags
-CC := cc
-CFLAGS := -ggdb -Wall -Wextra -I include -I src/cpu -I src
-
 # Source directories
 SRC_DIR := src
-CPU_DIR := src/cpu
+CPU_DIR := src/hardware
 BUILD_DIR := build
+
+# Compiler and flags
+CC := cc
+CFLAGS := -ggdb -Wall -Wextra -I include -I $(CPU_DIR) -I $(SRC_DIR)
 
 # Object files
 OBJECTS := $(BUILD_DIR)/lasm_assembler.o \

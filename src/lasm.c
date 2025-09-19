@@ -15,7 +15,7 @@
 #include "lasm_assembler.h"
 #include "lasm_parser.h"
 
-#include "cpu/6502.c"
+#include "hardware/hardware.h"
 
 char* extract_folder_path(const char* path);
 
@@ -77,12 +77,18 @@ int main(int argc, char *argv[]){
   //====================================
   char* cpu = hh_argparse_get_op_short_or_long(parser, 'm', "machine");
   if(cpu){
-    if(strcmp(cpu, "6502") == 0){
-      printf("Assembling for 6502...\n");
-      lasm_6502_init(&lasm_assembler);
-      lasm_assembler.machine_assemble = (uint8_t (*)(void*))lasm_6502_assemble;
-    }else{
-      printf("[ERROR] Machine named '%s' not found\n", cpu);
+    uint8_t found = 0;
+    for(size_t i = 0; i < sizeof(hardwares)/sizeof(hardware_t); i++){
+      if(strcmp(cpu, hardwares[i].name) == 0){
+        found = 1;
+        lasm_assembler.machine_assemble = (uint8_t (*)(void*))hardwares[i].assembler;
+        hardwares[i].initializer(&lasm_assembler);
+        printf("Using machine: %s\n", cpu);
+        break;
+      }
+    }
+    if(!found){
+      printf("[ERROR] Unknown machine: %s\n", cpu);
       return ERR;
     }
   }else{
