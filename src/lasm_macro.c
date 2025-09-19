@@ -105,6 +105,12 @@ uint8_t lasm_extract_macros(hh_darray_t *tokens, hh_darray_t *macros){
 			}else if(token->id == MACRO_C && inside_macro == 1){
 				inside_macro--;
 				hh_darray_pop(tokens, i, 0); // Consume '>'
+				// remove trailing newlines before closing
+				while(hh_darray_get_item_fill(&macro->tokens) > 0){
+					token_t *t = hh_darray_get_end_reference(&macro->tokens);
+					if(t->id == NEWLINE) hh_darray_popend(&macro->tokens, 0);
+					else break;
+				}
 				if(lasm_extract_macros(&macro->tokens, macros) == ERR) return ERR;
 			}else{
 				args_parsed = 1; // no more args

@@ -44,7 +44,7 @@
       CLC
       ADC  mult_u8.b
     no_add:
-      ROR
+      ROR A
       ROR  mult_u8.a
       DEX
       BNE  loop

@@ -170,6 +170,18 @@ uint8_t lasm_6502_assemble(assembler_t *assembler){
     addr_mode = ADM_IMM;
   }
   // Implied or Accumulator mode
+
+  else if(token->id == WORD && strlen(token->text) == 1 && char_upper(token->text[0]) == 'A'){
+    if(inst_addrs_mods[inst_id] & ADM_ACCUM){
+      addr_mode = ADM_ACCUM;
+      hh_darray_pop(assembler->tokens, 0, 0); // consume 'A'
+    }else{
+      printf(TAG);
+      print_error_loc(token);
+      printf("Addressing mode 'accumulator' not valid for instruction '%.3s'\n", inst_words[inst_id]);
+      return ERR;
+    }
+  }
   else if(token->id == NEWLINE){
     if(inst_addrs_mods[inst_id] & ADM_IMPL) addr_mode = ADM_IMPL;
     if(inst_addrs_mods[inst_id] & ADM_ACCUM) addr_mode = ADM_ACCUM;
