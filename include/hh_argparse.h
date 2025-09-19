@@ -4,7 +4,7 @@
 // implement the functions of the module
 //-----------------------------------------------------------------------------
 // Author       : github.com/SMDHuman
-// Last Update  : 29.08.2025
+// Last Update  : 17.09.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_ARGPARSE_H
 #define HH_ARGPARSE_H
@@ -20,6 +20,9 @@
 #define hap_get_op_short hh_argparse_get_op_short
 #define hap_get_op_long hh_argparse_get_op_long
 #define hap_get_op_short_or_long hh_argparse_get_op_short_or_long
+#define hap_get_nth_op_short hh_argparse_get_nth_op_short
+#define hap_get_nth_op_long hh_argparse_get_nth_op_long
+#define hap_get_nth_op_short_or_long hh_argparse_get_nth_op_short_or_long
 #define hap_check_op_short hh_argparse_check_op_short
 #define hap_check_op_long hh_argparse_check_op_long
 #define hap_check_op_long hh_argparse_check_op_short_or_long
