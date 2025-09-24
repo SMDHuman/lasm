@@ -11,7 +11,7 @@
 
 typedef struct{
     const char* name;
-    void (*initializer)(assembler_t *assembler);
+    uint8_t (*initializer)(assembler_t *assembler);
     uint8_t (*assembler)(assembler_t *assembler);
 } hardware_t;
 
@@ -22,10 +22,12 @@ typedef struct{
 
 // INCLUDE CPU IMPLEMENTATIONS HERE 
 #include "6502.c"
+#include "diaroma.c"
 
 // DEFINE HARDWARES HERE
 hardware_t hardwares[] = {
-    {"6502", lasm_6502_init, (uint8_t (*)(assembler_t *))lasm_6502_assemble}
+    {"6502", lasm_6502_init, (uint8_t (*)(assembler_t *))lasm_6502_assemble},
+    {"diaroma", lasm_diaroma_init, (uint8_t (*)(assembler_t *))lasm_diaroma_assemble}
 };
 
 //-----------------------------------------------------------------------------

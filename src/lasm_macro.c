@@ -188,7 +188,7 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 				// printf("Applying macro '%s'\n", macro->name.text);
 				hh_darray_t arguments; hh_darray_init(&arguments, sizeof(hh_darray_t));
 				hh_darray_pop(tokens, i, 0); // Consume macro name
-				if(token->id == RBRAC_O){
+				if(token->id == RBRAC_O && hh_darray_get_item_fill(&macro->args) > 0){
 					hh_darray_pop(tokens, i, 0); // Consume '('
 					int32_t bracket_count = 1;
 					while(bracket_count > 0){

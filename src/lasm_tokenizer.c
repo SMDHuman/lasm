@@ -211,6 +211,10 @@ char char_lower(char c){
 	return c;
 }
 //-----------------------------------------------------------------------------
+void print_warning_loc(token_t *token){
+	// Print the offending token
+	printf("[WARNING] '%s':%d:%d: ", token->filename, token->line, token->col);
+}
 void print_error_loc(token_t *token){
 	// Print the offending token
 	//printf("[DEBUG] Offending token: '%s'\n", token->text);

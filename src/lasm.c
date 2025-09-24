@@ -35,7 +35,9 @@ int main(int argc, char *argv[]){
     printf("  -m, --machine    Specify target machine\n");
     printf("  -i, --include     Specify include path\n");
     printf("Machines:\n");
-    printf("  6502\n");
+    for(size_t i = 0; i < sizeof(hardwares)/sizeof(hardware_t); i++){
+      printf("  %s\n", hardwares[i].name);
+    }
     hh_argparse_deinit(parser);
     return 0;
   }
@@ -56,8 +58,8 @@ int main(int argc, char *argv[]){
   }
   //====================================
   // Tokenize input file
-  hh_darray_t tokens; hh_darray_init(&tokens, sizeof(token_t));
   printf("Tokenizing %s\n", input_file_path);
+  hh_darray_t tokens; hh_darray_init(&tokens, sizeof(token_t));
   if(lasm_tokenize(input_file, input_file_path, &tokens) == ERR) return ERR;
   fclose(input_file);
   //====================================
@@ -75,6 +77,16 @@ int main(int argc, char *argv[]){
   if(lasm_clear_multi_newlines(&tokens) == ERR) return ERR;
   // print_tokens_as_code(&tokens);
   //====================================
+  // Initialize assembler
+  printf("Initializing assembler...\n");
+  char* output_name = hh_argparse_get_op_short_or_long(parser, 'o', "output");
+  if(!output_name){
+    output_name = "a.out";
+  }
+  //...
+  FILE *output = fopen(output_name, "w+");
+  if(lasm_assembler_init(&tokens, output) == ERR) return ERR;
+  //====================================
   char* cpu = hh_argparse_get_op_short_or_long(parser, 'm', "machine");
   if(cpu){
     uint8_t found = 0;
@@ -82,7 +94,8 @@ int main(int argc, char *argv[]){
       if(strcmp(cpu, hardwares[i].name) == 0){
         found = 1;
         lasm_assembler.machine_assemble = (uint8_t (*)(void*))hardwares[i].assembler;
-        hardwares[i].initializer(&lasm_assembler);
+        printf("Initializing machine: %s\n", cpu);
+        if(hardwares[i].initializer(&lasm_assembler) == ERR) return ERR;
         printf("Using machine: %s\n", cpu);
         break;
       }
@@ -95,24 +108,18 @@ int main(int argc, char *argv[]){
     printf("[ERROR] No machine specified\n");
     return ERR;
   }
+  // print_tokens_as_code(&tokens);
   //====================================
   // Assemble tokens
-  char* output_name = hh_argparse_get_op_short_or_long(parser, 'o', "output");
-  if(!output_name){
-    output_name = "a.out";
-  }
-  //...
-  FILE *output = fopen(output_name, "w+");
+  // Export global namespace to JSON
+  // FILE *json = fopen("global_namespace.json", "w");
+  // lasm_export_json_namespace(&lasm_assembler.global_namespace, json, 0);
+  // fclose(json);
   printf("Assembling to %s\n", output_name);
   if(lasm_assemble(&tokens, output) == ERR){
     fclose(output);
     return ERR;
   }
-  fclose(output);
-  // Export global namespace to JSON
-  // FILE *json = fopen("global_namespace.json", "w");
-  // lasm_export_json_namespace(&lasm_assembler.global_namespace, json, 0);
-  // fclose(json);
   //====================================
   // Free each macro in the macros array
   // TODO:
@@ -127,6 +134,7 @@ int main(int argc, char *argv[]){
   hh_darray_deinit(&tokens);
   lasm_namespace_deinit(&lasm_assembler.global_namespace);
   hh_darray_deinit(&lasm_assembler.backward_patches);
+  fclose(output);
   hh_argparse_deinit(parser);
   printf("Done!\n");
   return 0;

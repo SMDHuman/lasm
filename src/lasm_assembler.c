@@ -11,9 +11,7 @@ assembler_t lasm_assembler;
 
 static const char TAG[] = "[ASMB]";
 
-//-----------------------------------------------------------------------------
-// Function to assemble the code
-uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
+uint8_t lasm_assembler_init(hh_darray_t *tokens, FILE *output){ 
   // Initialize global namespace
   lasm_assembler.global_namespace = (namespace_t){0};
   token_t* first_token = hh_darray_get_reference(tokens, 0);
@@ -33,28 +31,33 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
   lasm_assembler.current_address_limit = -1;
   lasm_assembler.last_address_setter = (token_t){0};
   hh_darray_init(&lasm_assembler.backward_patches, sizeof(expression_t));
+  return 0;
+}
+//-----------------------------------------------------------------------------
+// Function to assemble the code
+uint8_t lasm_assemble(){
   //...
-  if(lasm_scout_namespace(tokens, 0, &lasm_assembler.global_namespace) == (size_t)-1) return ERR;
+  if(lasm_scout_namespace(lasm_assembler.tokens, 0, &lasm_assembler.global_namespace) == (size_t)-1) return ERR;
   //...
-  token_t *token = hh_darray_get_reference(tokens, 0);
-  while(hh_darray_get_fill(tokens) > 0){
+  token_t *token = hh_darray_get_reference(lasm_assembler.tokens, 0);
+  while(hh_darray_get_fill(lasm_assembler.tokens) > 0){
     //====================================
     // printf("token: %s\n", token->text);
     // Handle word token
     if(token->id == WORD){
       // 'word...{'
-      if(lasm_is_lineend_id(tokens, 0, CBRAC_O)){
+      if(lasm_is_lineend_id(lasm_assembler.tokens, 0, CBRAC_O)){
         namespace_t* find = lasm_find_namespace_reachable_namespace(lasm_assembler.current_namespace, token->text);
         // This is already found by scout
         if(find){
           lasm_assembler.current_namespace = find;
-          token_t* next_token = hh_darray_get_reference(tokens, 1);
+          token_t* next_token = hh_darray_get_reference(lasm_assembler.tokens, 1);
           // 'word[...]{'
           if(next_token->id == SBRAC_O){
-            hh_darray_pop(tokens, 0, 0); // Consume name
-            hh_darray_pop(tokens, 0, 0); // Consume square brace open
+            hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume name
+            hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume square brace open
             hh_bigint_t value; hh_bigint_init(&value, 0);
-            if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+            if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 0, 0, 0) == ERR) return ERR;
             uint64_t eval_value = hh_bigint_get_uint64(&value);
             if(lasm_assembler.last_address_setter.id == WORD){
               printf(TAG);
@@ -75,17 +78,17 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             lasm_assembler.last_address_set = eval_value;
             lasm_assembler.last_address_setter = find->name;
             if(token->id == RANGE){
-              hh_darray_pop(tokens, 0, 0); // Consume range
-              if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+              hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume range
+              if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 0, 0, 0) == ERR) return ERR;
               lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
             }else lasm_assembler.current_address_limit = -1;
-            if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
-            if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
+            if(lasm_expect_and_skip_id(lasm_assembler.tokens, SBRAC_C) == ERR) return ERR;
+            if(lasm_expect_and_skip_id(lasm_assembler.tokens, CBRAC_O) == ERR) return ERR;
           }
           // 'word{'
           else if(next_token->id == CBRAC_O){
-            hh_darray_pop(tokens, 0, 0); // Consume name
-            if(lasm_expect_and_skip_id(tokens, CBRAC_O) == ERR) return ERR;
+            hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume name
+            if(lasm_expect_and_skip_id(lasm_assembler.tokens, CBRAC_O) == ERR) return ERR;
           }
         }else{
           printf(TAG);
@@ -95,15 +98,15 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         }
       }
       // 'word...:'
-      else if(lasm_is_lineend_id(tokens, 0, COLON)){
+      else if(lasm_is_lineend_id(lasm_assembler.tokens, 0, COLON)){
         label_t* find = lasm_find_label_in_namespace(lasm_assembler.current_namespace, token->text);
         if(find){
           // 'word[...]:'
           if(find->is_vector){
-            hh_darray_pop(tokens, 0, 0); // Consume name
-            hh_darray_pop(tokens, 0, 0); // Consume square brace open
+            hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume name
+            hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume square brace open
             hh_bigint_t value; hh_bigint_init(&value, 0);
-            if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+            if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 0, 0, 0) == ERR) return ERR;
             find->value = hh_bigint_get_uint64(&value);
             if(lasm_assembler.last_address_setter.id == WORD){
               printf(TAG);
@@ -125,18 +128,18 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
             lasm_assembler.last_address_set = find->value;
             lasm_assembler.last_address_setter = find->name;
             if(token->id == RANGE){
-              hh_darray_pop(tokens, 0, 0); // Consume range
-              if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+              hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume range
+              if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 0, 0, 0) == ERR) return ERR;
               lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
             }else lasm_assembler.current_address_limit = -1;
-            if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
-            if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
+            if(lasm_expect_and_skip_id(lasm_assembler.tokens, SBRAC_C) == ERR) return ERR;
+            if(lasm_expect_and_skip_id(lasm_assembler.tokens, COLON) == ERR) return ERR;
             hh_bigint_deinit(&value);
           }
           // 'word:'
           else{
-            hh_darray_pop(tokens, 0, 0); // Consume name
-            if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
+            hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume name
+            if(lasm_expect_and_skip_id(lasm_assembler.tokens, COLON) == ERR) return ERR;
             find->value = lasm_get_file_cursor();
             find->is_evaluated = 1;
           }
@@ -152,7 +155,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         label_t* label = lasm_find_label_reachable_namespace(lasm_assembler.current_namespace, token->text);
         if(label){
           hh_bigint_t value; hh_bigint_init(&value, 0);
-          if(lasm_parse_and_eval_expression(tokens, &value, 1, 0, 0) == ERR) return ERR;
+          if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
           fwrite(value.data, 1, value.size, lasm_assembler.output_file);
           hh_bigint_deinit(&value);
         }
@@ -172,8 +175,8 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       lasm_assembler.current_namespace = hh_darray_get_end_reference(&lasm_assembler.current_namespace->childs);
       hh_darray_init(&lasm_assembler.current_namespace->childs, sizeof(namespace_t));
       hh_darray_init(&lasm_assembler.current_namespace->labels, sizeof(label_t));
-      hh_darray_pop(tokens, 0, 0); // Consume curly brace open
-      if(lasm_scout_namespace(tokens, 0, lasm_assembler.current_namespace) == (size_t)-1) return ERR;
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume curly brace open
+      if(lasm_scout_namespace(lasm_assembler.tokens, 0, lasm_assembler.current_namespace) == (size_t)-1) return ERR;
     }
     //====================================
     // Handle '}' token
@@ -187,22 +190,22 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
         hh_darray_remove_reference(&((namespace_t *)lasm_assembler.current_namespace->parent)->childs, lasm_assembler.current_namespace);
       }
       lasm_assembler.current_namespace = upper_ns;
-      hh_darray_pop(tokens, 0, 0); // Consume curly brace close
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume curly brace close
      
     }
     //====================================
     else if(token->id == NUMBER || token->id == STRING_DB || token->id == RBRAC_O){
       hh_bigint_t value; hh_bigint_init(&value, 0);
-      if(lasm_parse_and_eval_expression(tokens, &value, 1, 0, 0) == ERR) return ERR;
+      if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 1, 0, 0) == ERR) return ERR;
       fwrite(value.data, 1, value.size, lasm_assembler.output_file);
       hh_bigint_deinit(&value);
     }
     //====================================
     // Handle "["
     else if(token->id == SBRAC_O){ 
-      hh_darray_pop(tokens, 0, 0); // Consume square brace open
+      hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume square brace open
       hh_bigint_t value; hh_bigint_init(&value, 0);
-      if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+      if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 0, 0, 0) == ERR) return ERR;
       uint64_t eval_val = hh_bigint_get_uint64(&value);
       if(lasm_assembler.last_address_setter.id == WORD){
         printf(TAG);
@@ -223,12 +226,12 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       lasm_assembler.last_address_set = eval_val;
       lasm_assembler.last_address_setter = *token;
       if(token->id == RANGE){
-        hh_darray_pop(tokens, 0, 0); // Consume range
-        if(lasm_parse_and_eval_expression(tokens, &value, 0, 0, 0) == ERR) return ERR;
+        hh_darray_pop(lasm_assembler.tokens, 0, 0); // Consume range
+        if(lasm_parse_and_eval_expression(lasm_assembler.tokens, &value, 0, 0, 0) == ERR) return ERR;
         lasm_assembler.current_address_limit = hh_bigint_get_uint64(&value);
       }else lasm_assembler.current_address_limit = -1;
-      if(lasm_expect_and_skip_id(tokens, SBRAC_C) == ERR) return ERR;
-      if(lasm_expect_and_skip_id(tokens, COLON) == ERR) return ERR;
+      if(lasm_expect_and_skip_id(lasm_assembler.tokens, SBRAC_C) == ERR) return ERR;
+      if(lasm_expect_and_skip_id(lasm_assembler.tokens, COLON) == ERR) return ERR;
     }
     //====================================
     else{
@@ -245,7 +248,7 @@ uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output){
       return ERR;
     }
     // Expect newline
-    if(lasm_expect_and_skip_id(tokens, NEWLINE) == ERR) return ERR;
+    if(lasm_expect_and_skip_id(lasm_assembler.tokens, NEWLINE) == ERR) return ERR;
   }
   // =====================
   // Backwards patches
@@ -588,6 +591,7 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
         hh_bigint_set_zero(number);
       }else{
         hh_bigint_resize(&left_number, size);
+        hh_bigint_resize(number, size);
         hh_bigint_copy(number, &left_number);
       }
     }else if(node->token.id == INDEX){
@@ -658,10 +662,12 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
     if(label != NULL){
       // If label is found, use its value
       if(label->is_evaluated){
-        hh_bigint_resize(number, lasm_assembler.addressing_size);
-        memcpy(number->data, &label->value, lasm_assembler.addressing_size);
-        if(label->is_vector){
-          hh_bigint_normalize(number);
+        hh_bigint_set_uint64(number, label->value);
+        hh_bigint_normalize(number);
+        if(number->size < lasm_assembler.addressing_size && !label->is_vector) hh_bigint_resize(number, lasm_assembler.addressing_size);
+        if(number->size > lasm_assembler.addressing_size && lasm_assembler.address_size_out_of_range_warning){
+          print_warning_loc(&node->token);
+          printf("Label '%s' value size %zu bytes is bigger than addressing size %u bytes.\n", node->token.text, number->size, lasm_assembler.addressing_size);
         }
       }else{
         hh_bigint_resize(number, lasm_assembler.addressing_size);

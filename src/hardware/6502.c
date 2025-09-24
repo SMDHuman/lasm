@@ -145,8 +145,10 @@ static addressing_modes_e inst_addrs_mods[56]={
   /*TYA*/ ADM_IMPL
 };
 
-void lasm_6502_init(assembler_t *assembler){
+uint8_t lasm_6502_init(assembler_t *assembler){
   assembler->addressing_size = 2; // 16-bit addressing
+  assembler->address_size_out_of_range_warning = 1;
+  return 0;
 }
 
 uint8_t lasm_6502_assemble(assembler_t *assembler){

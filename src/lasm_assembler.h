@@ -33,6 +33,7 @@ uint8_t lasm_label_deinit(label_t *label);
 
 typedef struct{
   uint8_t addressing_size; // Size of label in bytes
+  uint8_t address_size_out_of_range_warning; // Whether to show warning if address size is out of range
   size_t last_address_set;
   token_t last_address_setter;
   size_t current_address_limit;
@@ -47,7 +48,8 @@ typedef struct{
 extern assembler_t lasm_assembler;
 
 // Function to assemble the code
-uint8_t lasm_assemble(hh_darray_t *tokens, FILE *output);
+uint8_t lasm_assembler_init(hh_darray_t *tokens, FILE *output);
+uint8_t lasm_assemble();
 uint8_t lasm_eval_and_backward_patch_expression(uint8_t enable_skip);
 uint8_t lasm_parse_and_eval_expression(hh_darray_t* tokens, hh_bigint_t* result, uint8_t enable_backward_patch, uint8_t is_relative, size_t max_size);
 size_t lasm_scout_namespace(hh_darray_t* tokens, size_t start_from, namespace_t *namespace);

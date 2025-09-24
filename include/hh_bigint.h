@@ -5,7 +5,7 @@
 // functions return 255 on failure
 //-----------------------------------------------------------------------------
 // Author		: github.com/SMDHuman
-// Last Update	: 17.09.2025
+// Last Update	: 24.09.2025
 //-----------------------------------------------------------------------------
 #ifndef HH_BIGINT_H
 #define HH_BIGINT_H
@@ -27,6 +27,8 @@
 #define hbi_resize hh_bigint_resize
 #define hbi_set_zero hh_bigint_set_zero
 #define hbi_set_int32 hh_bigint_set_int32
+#define hbi_set_int64 hh_bigint_set_int64
+#define hbi_set_uint64 hh_bigint_set_uint64
 #define hbi_set_uint32 hh_bigint_set_uint32
 #define hbi_set_uint16 hh_bigint_set_uint16
 #define hbi_set_buffer hh_bigint_set_buffer
@@ -65,6 +67,7 @@ uint8_t hh_bigint_init(hh_bigint_t *bigint, const int32_t init_number);
 uint8_t hh_bigint_deinit(hh_bigint_t *bigint);
 uint8_t hh_bigint_resize(hh_bigint_t *bigint, const size_t new_capacity);
 uint8_t hh_bigint_set_zero(hh_bigint_t *bigint);
+uint8_t hh_bigint_set_uint64(hh_bigint_t *bigint, const uint64_t value);
 uint8_t hh_bigint_set_int64(hh_bigint_t *bigint, const int64_t value);
 uint8_t hh_bigint_set_int32(hh_bigint_t *bigint, const int32_t value);
 uint8_t hh_bigint_set_uint32(hh_bigint_t *bigint, const uint32_t value);
@@ -150,6 +153,12 @@ uint8_t hh_bigint_set_zero(hh_bigint_t *bigint){
     if(bigint == NULL) return ERR;
     memset(bigint->data, 0, bigint->size);
     bigint->sign = 0;
+    return 0;
+}
+//-----------------------------------------------------------------------------
+uint8_t hh_bigint_set_uint64(hh_bigint_t *bigint, uint64_t value){
+    bigint->sign = 0;
+    if(hh_bigint_set_buffer(bigint, &value, 8) == ERR) return ERR;
     return 0;
 }
 //-----------------------------------------------------------------------------
