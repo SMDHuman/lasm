@@ -47,34 +47,51 @@ Conditions: geci
 */
 
 static const char inst_macros[] = "\
-  <nop 0x00 >; <NOP 0x00 >\
-  <pha 0x10 | >; <PHA 0x10 | >\
-  <sab 0x20 >; <SAB 0x20 >\
-  <sab_if 0x20 | >; <SAB_IF 0x20 | >\
-  <sax 0x30 >; <SAX 0x30 >\
-  <sax_if 0x30 | >; <SAX_IF 0x30 | >\
-  <sbx 0x40 >; <SBX 0x40 >\
-  <sbx_if 0x40 | >; <SBX_IF 0x40 | >\
-  <lda 0x50 >; <LDA 0x50 >\
-  <lda_if 0x50 | >; <LDA_IF 0x50 | >\
-  <sta 0x60 >; <STA 0x60 >\
-  <sta_if 0x60 | >; <STA_IF 0x60 | >\
-  <add 0x70 >; <ADD 0x70 >\
-  <add_if 0x70 | >; <ADD_IF 0x70 | >\
-  <sub 0x80 >; <SUB 0x80 >\
-  <sub_if 0x80 | >; <SUB_IF 0x80 | >\
-  <and 0x90 >; <AND 0x90 >\
-  <and_if 0x90 | >; <AND_IF 0x90 | >\
-  <ora 0xA0 >; <ORA 0xA0 >\
-  <ora_if 0xA0 | >; <ORA_IF 0xA0 | >\
-  <inc 0xB0 >; <INC 0xB0 >\
-  <inc_if 0xB0 | >; <INC_IF 0xB0 | >\
-  <dec 0xC0 >; <DEC 0xC0 >\
-  <dec_if 0xC0 | >; <DEC_IF 0xC0 | >\
-  <jmp 0xD0 >; <JMP 0xD0 >\
-  <jmp_if 0xD0 | >; <JMP_IF 0xD0 | >\
-  <out 0xE0 | >; <OUT 0xE0 | >\
-  <inp 0xF0 | >; <INP 0xF0 | >\
+  <__pha__ 0x00>\
+  <__tab__ 0x10>\
+  <__sax__ 0x20>\
+  <__lda__ 0x30>\
+  <__sta__ 0x40>\
+  <__jmp__ 0x50>\
+  <__out__ 0x60>\
+  <__inp__ 0x70>\
+  <__add__ 0x80>\
+  <__sub__ 0x90>\
+  <__and__ 0xA0>\
+  <__ora__ 0xB0>\
+  <__xor__ 0xC0>\
+  <__inc__ 0xD0>\
+  <__dec__ 0xE0>\
+  <__szr__ 0xF0>\
+  <pha __pha__ | >; <PHA __pha__ | >\
+  <tab __tab__ >; <TAB __tab__ >\
+  <tab_if __tab__ | >; <TAB_IF __tab__ | >\
+  <sax __sax__ >; <SAX __sax__ >\
+  <sax_if __sax__ | >; <SAX_IF __sax__ | >\
+  <lda __lda__ >; <LDA __lda__ >\
+  <lda_if __lda__ | >; <LDA_IF __lda__ | >\
+  <sta __sta__ >; <STA __sta__ >\
+  <sta_if __sta__ | >; <STA_IF __sta__ | >\
+  <add __add__ >; <ADD __add__ >\
+  <add_if __add__ | >; <ADD_IF __add__ | >\
+  <sub __sub__ >; <SUB __sub__ >\
+  <sub_if __sub__ | >; <SUB_IF __sub__ | >\
+  <and __and__ >; <AND __and__ >\
+  <and_if __and__ | >; <AND_IF __and__ | >\
+  <ora __ora__ >; <ORA __ora__ >\
+  <ora_if __ora__ | >; <ORA_IF __ora__ | >\
+  <xor __xor__ >; <XOR __xor__ >\
+  <xor_if __xor__ | >; <XOR_IF __xor__ | >\
+  <inc __inc__ >; <INC __inc__ >\
+  <inc_if __inc__ | >; <INC_IF __inc__ | >\
+  <dec __dec__ >; <DEC __dec__ >\
+  <dec_if __dec__ | >; <DEC_IF __dec__ | >\
+  <szr __szr__ >; <SZR __szr__ >\
+  <szr_if __szr__ | >; <SZR_IF __szr__ | >\
+  <jmp __jmp__ >; <JMP __jmp__ >\
+  <jmp_if __jmp__ | >; <JMP_IF __jmp__ | >\
+  <out __out__ | >; <OUT __out__ | >\
+  <inp __inp__ | >; <INP __inp__ | >\
   <greater 0b0001 >; <GREATER 0b0001 >\
   <ngreater 0b1001 >; <NGREATER 0b1001 >\
   <equal 0b0010 >; <EQUAL 0b0010 >\

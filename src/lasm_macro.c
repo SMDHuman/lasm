@@ -182,6 +182,7 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 		token_t* token = hh_darray_get_reference(tokens, i);
 		token_t org_token; hh_darray_get(tokens, i, &org_token);
 		if(token->id == WORD){
+			// printf("token: %s\n", token->text);
 			macro_t* macro = lasm_find_and_get_macro(token, macros);
 			if(macro){
 				// Apply macro
@@ -245,6 +246,7 @@ uint8_t lasm_apply_macros(hh_darray_t *tokens, hh_darray_t *macros){
 					}
 				}
 				hh_darray_deinit(&arguments);
+				i--; // Re-evaluate current index
 			}
 		}
 	}

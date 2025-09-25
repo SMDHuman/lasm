@@ -42,7 +42,10 @@ global_out:
 macro
 >
 
+<abc 0>
+<efg abc>
 
+efg
 
 // If uncommet this line, it will give an error
 // becouse 'LABEL' initialized lower level of scope
