@@ -571,27 +571,28 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
     uint8_t left_res = lasm_evaluate_expression_tree((expression_tree_t*)node->left, &left_number); // Evaluate left subtree
     hh_bigint_t right_number; hh_bigint_init(&right_number, 0);
     uint8_t right_res = lasm_evaluate_expression_tree((expression_tree_t*)node->right, &right_number); // Evaluate right subtree
+    size_t biggest_size = (left_number.size > right_number.size ? left_number.size : right_number.size);
     if(left_res || right_res){
       if(number->size < left_number.size || number->size < right_number.size){
-        size_t biggest_size = (left_number.size > right_number.size ? left_number.size : right_number.size);
         if(hh_bigint_resize(number, biggest_size) == ERR) return ERR;
       }
       return left_res | right_res;
     }
-    size_t biggest_size = (left_number.size > right_number.size ? left_number.size : right_number.size);
     if(node->token.id == PLUS) {
       hh_bigint_add(&left_number, &right_number, number);
+      hh_bigint_normalize(number);
     } else if(node->token.id == MINUS) {
       hh_bigint_subtract(&left_number, &right_number, number);
+      hh_bigint_normalize(number);
     } else if(node->token.id == ASTERISK) {
       hh_bigint_multiply(&left_number, &right_number, number);
+      hh_bigint_normalize(number);
     } else if(node->token.id == DOT){
       uint32_t size = hh_bigint_get_uint32(&right_number);
       if(size == 0){
         hh_bigint_set_zero(number);
       }else{
         hh_bigint_resize(&left_number, size);
-        hh_bigint_resize(number, size);
         hh_bigint_copy(number, &left_number);
       }
     }else if(node->token.id == INDEX){
@@ -606,23 +607,28 @@ uint8_t lasm_evaluate_expression_tree(expression_tree_t *node, hh_bigint_t *numb
       hh_bigint_set_zero(number); hh_bigint_set_at(number, num, 0);
     }else if(node->token.id == BITSHIFT_L){
       hh_bigint_shift_left(&left_number, hh_bigint_get_uint64(&right_number), number);
+      hh_bigint_normalize(number);
     }else if(node->token.id == BITSHIFT_R){
       hh_bigint_shift_right(&left_number, hh_bigint_get_uint64(&right_number), number);
+      hh_bigint_normalize(number);
     }else if(node->token.id == BITW_AND){
       hh_bigint_bitwise_and(&left_number, &right_number, number);
+      hh_bigint_normalize(number);
     }else if(node->token.id == BITW_XOR){
       hh_bigint_bitwise_xor(&left_number, &right_number, number);
+      hh_bigint_normalize(number);
     }else if(node->token.id == BITW_OR){
       hh_bigint_bitwise_or(&left_number, &right_number, number);
+      hh_bigint_normalize(number);
     }else{
       printf(TAG);
       print_error_loc(&node->token);
       printf("Unsupported operation: '%s'\n", node->token.text);
       return ERR;
     }
-    if(number->size < biggest_size){
-      if(hh_bigint_resize(number, biggest_size) == ERR) return ERR;
-    }
+    // if(number->size < biggest_size){
+    //   if(hh_bigint_resize(number, biggest_size) == ERR) return ERR;
+    // }
   }else if(node->token.id == NUMBER){
     if(hh_bigint_convert_from_string(number, node->token.text) == ERR) return ERR;
   }else if(node->token.id == STRING_DB){
