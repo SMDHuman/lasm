@@ -57,12 +57,12 @@ static const char inst_macros[] = "\
   <__inp__ 0x70>\
   <__add__ 0x80>\
   <__sub__ 0x90>\
-  <__and__ 0xA0>\
-  <__ora__ 0xB0>\
-  <__xor__ 0xC0>\
-  <__inc__ 0xD0>\
-  <__dec__ 0xE0>\
-  <__szr__ 0xF0>\
+  <__inc__ 0xA0>\
+  <__dec__ 0xB0>\
+  <__and__ 0xC0>\
+  <__ora__ 0xD0>\
+  <__xor__ 0xE0>\
+  <__not__ 0xF0>\
   <pha __pha__ | >; <PHA __pha__ | >\
   <tab __tab__ >; <TAB __tab__ >\
   <tab_if __tab__ | >; <TAB_IF __tab__ | >\
@@ -86,8 +86,8 @@ static const char inst_macros[] = "\
   <inc_if __inc__ | >; <INC_IF __inc__ | >\
   <dec __dec__ >; <DEC __dec__ >\
   <dec_if __dec__ | >; <DEC_IF __dec__ | >\
-  <szr __szr__ >; <SZR __szr__ >\
-  <szr_if __szr__ | >; <SZR_IF __szr__ | >\
+  <not __not__ >; <NOT __not__ >\
+  <not_if __not__ | >; <NOT_IF __not__ | >\
   <jmp __jmp__ >; <JMP __jmp__ >\
   <jmp_if __jmp__ | >; <JMP_IF __jmp__ | >\
   <out __out__ | >; <OUT __out__ | >\
