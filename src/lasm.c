@@ -34,6 +34,7 @@ int main(int argc, char *argv[]){
     printf("  -o, --output     Specify output file\n");
     printf("  -m, --machine    Specify target machine\n");
     printf("  -i, --include     Specify include path\n");
+    printf("  -L, --logisim     Change output format to raw 2.0 for logisim\n");
     printf("Machines:\n");
     for(size_t i = 0; i < sizeof(hardwares)/sizeof(hardware_t); i++){
       printf("  %s\n", hardwares[i].name);
@@ -135,7 +136,39 @@ int main(int argc, char *argv[]){
   lasm_namespace_deinit(&lasm_assembler.global_namespace);
   hh_darray_deinit(&lasm_assembler.backward_patches);
   fclose(output);
+  //====================================
+  // Convert output file to Logisim raw 2.0 format if needed
+  if(hh_argparse_check_op_short_or_long(parser, 'L', "logisim")){
+    printf("Converting output to Logisim raw 2.0 format...\n");
+    FILE *bin = fopen(output_name, "r");
+    if(bin == NULL){
+      printf("[ERROR] Failed to open output file for Logisim conversion\n");
+      return ERR;
+    }
+    fseek(bin, 0, SEEK_END);
+    size_t file_size = ftell(bin);
+    fseek(bin, 0, SEEK_SET);
+    uint8_t *buffer = malloc(file_size);
+    fread(buffer, 1, file_size, bin);
+    fclose(bin);
+    remove(output_name);
+    bin = fopen(output_name, "w");
+    if(bin == NULL){
+      printf("[ERROR] Failed to create output file for Logisim conversion\n");
+      free(buffer);
+      return ERR;
+    }
+    fprintf(bin, "v2.0 raw\n");
+    for(size_t i = 0; i < file_size; i++){
+      fprintf(bin, "%02x ", buffer[i]);
+      if((i+1) % 16 == 0) fprintf(bin, "\n");
+    }
+    if(file_size % 16 != 0) fprintf(bin, "\n");
+    fclose(bin);
+    free(buffer);
+  }
   hh_argparse_deinit(parser);
+  //====================================
   printf("Done!\n");
   return 0;
 }

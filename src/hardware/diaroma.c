@@ -47,12 +47,12 @@ Conditions: geci
 */
 
 static const char inst_macros[] = "\
-  <__pha__ 0x00>\
-  <__tab__ 0x10>\
-  <__sax__ 0x20>\
+  <__tab__ 0x00>\
+  <__sax__ 0x10>\
+  <__sta__ 0x20>\
   <__lda__ 0x30>\
-  <__sta__ 0x40>\
-  <__jmp__ 0x50>\
+  <__jmp__ 0x40>\
+  <__pha__ 0x50>\
   <__out__ 0x60>\
   <__inp__ 0x70>\
   <__add__ 0x80>\
