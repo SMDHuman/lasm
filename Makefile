@@ -2,6 +2,7 @@
 SRC_DIR := src
 CPU_DIR := src/hardware
 BUILD_DIR := build
+INSTALL_DIR := /usr/local/bin
 
 # Compiler and flags
 CC := cc
@@ -34,10 +35,11 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 install: all
-	cp $(BUILD_DIR)/lasm ~/.local/bin
+	touch $(INSTALL_DIR)
+	cp $(BUILD_DIR)/lasm $(INSTALL_DIR)
 
 uninstall:
-	rm -f ~/.local/bin/lasm
+	rm -f $(INSTALL_DIR)/lasm
 
 # Examples
 examples: example_basic_syntax example_expressions example_namespaces example_fibonacci example_6502_addressing

@@ -35,6 +35,7 @@ int main(int argc, char *argv[]){
     printf("  -m, --machine    Specify target machine\n");
     printf("  -i, --include     Specify include path\n");
     printf("  -L, --logisim     Change output format to raw 2.0 for logisim\n");
+    printf("  -V, --verilog     Change output format to .mem for verilog\n");
     printf("Machines:\n");
     for(size_t i = 0; i < sizeof(hardwares)/sizeof(hardware_t); i++){
       printf("  %s\n", hardwares[i].name);
@@ -137,6 +138,33 @@ int main(int argc, char *argv[]){
   hh_darray_deinit(&lasm_assembler.backward_patches);
   fclose(output);
   //====================================
+  // Convert output file to Verilog format if needed
+  if(hh_argparse_check_op_short_or_long(parser, 'V', "verilog")){
+    printf("Converting output to Verilog .mem format...\n");
+    FILE *bin = fopen(output_name, "r");
+    if(bin == NULL){
+      printf("[ERROR] Failed to open output file for Verilog conversion\n");
+      return ERR;
+    }
+    fseek(bin, 0, SEEK_END);
+    size_t file_size = ftell(bin);
+    fseek(bin, 0, SEEK_SET);
+    uint8_t *buffer = malloc(file_size);
+    fread(buffer, 1, file_size, bin);
+    fclose(bin);
+    remove(output_name);
+    bin = fopen(output_name, "w");
+    if(bin == NULL){
+      printf("[ERROR] Failed to create output file for Verilog conversion\n");
+      free(buffer);
+      return ERR;
+    }
+    for(size_t i = 0; i < file_size; i++){
+      fprintf(bin, "%02x\n", buffer[i]);
+    }
+    fclose(bin);
+    free(buffer);
+  }
   // Convert output file to Logisim raw 2.0 format if needed
   if(hh_argparse_check_op_short_or_long(parser, 'L', "logisim")){
     printf("Converting output to Logisim raw 2.0 format...\n");
