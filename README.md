@@ -1,4 +1,6 @@
-# lotp-asm
+<img src="res/LOTP Assembler Logo.png" width="256" alt="LOTP Assembler">
+
+# LOTP Assembler 1
 LOTP assembler is a high-level assembler for my custom CPUs and the 6502 CPU. The purpose of this project is for me to learn and add some features of my own.
 
 ### What has special than other assemblers?
